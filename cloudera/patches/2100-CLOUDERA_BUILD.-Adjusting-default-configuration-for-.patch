@@ -1,0 +1,78 @@
+From a9ed2ef093b9c52459f37ddf5d51a3d44dab968f Mon Sep 17 00:00:00 2001
+From: Sean Mackrory <sean@cloudera.com>
+Date: Fri, 9 Dec 2016 14:55:32 -0700
+Subject: [PATCH 2100/2102] CLOUDERA_BUILD. Adjusting default configuration
+ for multipart operations as discussed on
+ HADOOP-13868.
+
+Change-Id: I8caa4ca60e6d16b131fd75f635de2827fc90fb42
+---
+ .../src/main/resources/core-default.xml            |    4 ++--
+ .../java/org/apache/hadoop/fs/s3a/Constants.java   |    4 ++--
+ .../src/site/markdown/tools/hadoop-aws/index.md    |    4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml b/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
+index a36883e..2428899 100644
+--- a/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
++++ b/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
+@@ -963,13 +963,13 @@ for ldap providers in the same way as above does.
+ 
+ <property>
+   <name>fs.s3a.multipart.size</name>
+-  <value>8388608</value>
++  <value>64M</value>
+   <description>How big (in bytes) to split upload or copy operations up into.</description>
+ </property>
+ 
+ <property>
+   <name>fs.s3a.multipart.threshold</name>
+-  <value>16777216</value>
++  <value>128M</value>
+   <description>How big (in bytes) to split upload or copy operations up into.
+     This also controls the partition size in renamed files, as rename() involves
+     copying the source file(s)
+diff --git a/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java b/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java
+index 6ae764c..207fd44 100644
+--- a/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java
++++ b/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java
+@@ -120,12 +120,12 @@ private Constants() {
+ 
+   // size of each of or multipart pieces in bytes
+   public static final String MULTIPART_SIZE = "fs.s3a.multipart.size";
+-  public static final long DEFAULT_MULTIPART_SIZE = 104857600; // 100 MB
++  public static final long DEFAULT_MULTIPART_SIZE = 67108864; // 64M
+ 
+   // minimum size in bytes before we start a multipart uploads or copy
+   public static final String MIN_MULTIPART_THRESHOLD =
+       "fs.s3a.multipart.threshold";
+-  public static final long DEFAULT_MIN_MULTIPART_THRESHOLD = Integer.MAX_VALUE;
++  public static final long DEFAULT_MIN_MULTIPART_THRESHOLD = 134217728; // 128M
+ 
+   //enable multiobject-delete calls?
+   public static final String ENABLE_MULTI_DELETE =
+diff --git a/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md b/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
+index 520304f..09dcf97 100644
+--- a/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
++++ b/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
+@@ -730,7 +730,7 @@ from placing its declaration on the command line.
+ 
+     <property>
+       <name>fs.s3a.multipart.size</name>
+-      <value>104857600</value>
++      <value>64M</value>
+       <description>How big (in bytes) to split upload or copy operations up into.
+       This also controls the partition size in renamed files, as rename() involves
+       copying the source file(s)</description>
+@@ -738,7 +738,7 @@ from placing its declaration on the command line.
+ 
+     <property>
+       <name>fs.s3a.multipart.threshold</name>
+-      <value>2147483647</value>
++      <value>128M</value>
+       <description>Threshold before uploads or copies use parallel multipart operations.</description>
+     </property>
+ 
+-- 
+1.7.9.5
+

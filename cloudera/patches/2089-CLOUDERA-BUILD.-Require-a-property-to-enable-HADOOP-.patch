@@ -1,0 +1,276 @@
+From 4130a0ef962d0a5f67d165812c1653f816506338 Mon Sep 17 00:00:00 2001
+From: Sean Mackrory <sean@cloudera.com>
+Date: Mon, 21 Nov 2016 18:41:27 -0700
+Subject: [PATCH 2089/2102] CLOUDERA-BUILD. Require a property to enable
+ HADOOP-13139 changes.
+
+HADOOP-13139 changed the executor used for concurrent S3A tasks to block
+new submissions until there is space on the allocated resources instead
+of throwing an exception. The backpressure from blocking allows some
+workloads to avoid hitting OutOfMemoryExceptions or other errors, but it
+also makes it very easy for concurrent copies / renames to deadlock in
+the AWS SDK. The change from HADOOP-13139 is therefore only enabled if
+cdh.fs.s3a.blocking.executor.enabled is set to 'true'. See CDH-47483.
+
+Change-Id: I0abddfba1b5bbb974c8dbb7b0f5818b87266bff0
+---
+ .../src/main/resources/core-default.xml            |   10 +-
+ .../java/org/apache/hadoop/fs/s3a/Constants.java   |   15 ++-
+ .../org/apache/hadoop/fs/s3a/S3AFileSystem.java    |  119 ++++++++++++++++----
+ .../src/site/markdown/tools/hadoop-aws/index.md    |   10 +-
+ 4 files changed, 125 insertions(+), 29 deletions(-)
+
+diff --git a/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml b/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
+index e14a5e2..a36883e 100644
+--- a/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
++++ b/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
+@@ -936,12 +936,18 @@ for ldap providers in the same way as above does.
+ 
+ <property>
+   <name>fs.s3a.threads.max</name>
+-  <value>10</value>
++  <value>256</value>
+   <description> Maximum number of concurrent active (part)uploads,
+     which each use a thread from the threadpool.</description>
+ </property>
+ 
+ <property>
++  <name>fs.s3a.threads.core</name>
++  <value>15</value>
++  <description>Number of core threads in the threadpool.</description>
++</property>
++
++<property>
+   <name>fs.s3a.threads.keepalivetime</name>
+   <value>60</value>
+   <description>Number of seconds a thread can be idle before being
+@@ -950,7 +956,7 @@ for ldap providers in the same way as above does.
+ 
+ <property>
+   <name>fs.s3a.max.total.tasks</name>
+-  <value>5</value>
++  <value>1000</value>
+   <description>Number of (part)uploads allowed to the queue before
+     blocking additional uploads.</description>
+ </property>
+diff --git a/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java b/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java
+index cf97c35..6ae764c 100644
+--- a/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java
++++ b/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/Constants.java
+@@ -98,14 +98,19 @@ private Constants() {
+ 
+   // the maximum number of threads to allow in the pool used by TransferManager
+   public static final String MAX_THREADS = "fs.s3a.threads.max";
+-  public static final int DEFAULT_MAX_THREADS = 10;
++  public static final int DEFAULT_MAX_THREADS = 256;
+ 
+-  // unused option: maintained for compile-time compatibility.
+-  // if set, a warning is logged in S3A during init
+-  @Deprecated
++  // not used when blocking thread pool is enabled
++  // the number of threads to keep in the pool used by TransferManager
+   public static final String CORE_THREADS = "fs.s3a.threads.core";
++  public static final int DEFAULT_CORE_THREADS = DEFAULT_MAXIMUM_CONNECTIONS;
+ 
+-  // the time an idle thread waits before terminating
++  // feature flag to enable the blocking executor added in HADOOP-13139
++  public static final String ENABLE_BLOCKING_EXECUTOR =
++      "cdh.fs.s3a.blocking.executor.enabled";
++
++  // when the number of threads is greater than the core, this is the maximum time
++  // that excess idle threads will wait for new tasks before terminating.
+   public static final String KEEPALIVE_TIME = "fs.s3a.threads.keepalivetime";
+   public static final int DEFAULT_KEEPALIVE_TIME = 60;
+ 
+diff --git a/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/S3AFileSystem.java b/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/S3AFileSystem.java
+index 8cc7c97..b40991e 100644
+--- a/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/S3AFileSystem.java
++++ b/hadoop-tools/hadoop-aws/src/main/java/org/apache/hadoop/fs/s3a/S3AFileSystem.java
+@@ -30,8 +30,12 @@
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.concurrent.ExecutorService;
++import java.util.concurrent.LinkedBlockingQueue;
++import java.util.concurrent.ThreadFactory;
++import java.util.concurrent.ThreadPoolExecutor;
+ import java.util.concurrent.TimeUnit;
+ import java.util.concurrent.atomic.AtomicBoolean;
++import java.util.concurrent.atomic.AtomicInteger;
+ 
+ import com.amazonaws.AmazonClientException;
+ import com.amazonaws.AmazonServiceException;
+@@ -122,6 +126,7 @@
+   private S3AStorageStatistics storageStatistics;
+   private long readAhead;
+   private S3AInputPolicy inputPolicy;
++  private static final AtomicInteger poolNumber = new AtomicInteger(1);
+   private static final AtomicBoolean warnedOfCoreThreadDeprecation =
+       new AtomicBoolean(false);
+ 
+@@ -132,6 +137,56 @@
+   static final String DEPRECATED_ACCESS_KEY = "fs.s3a.awsAccessKeyId";
+   static final String DEPRECATED_SECRET_KEY = "fs.s3a.awsSecretAccessKey";
+ 
++  /**
++   * Returns a {@link java.util.concurrent.ThreadFactory} that names each created thread uniquely,
++   * with a common prefix.
++   * @param prefix The prefix of every created Thread's name
++   * @return a {@link java.util.concurrent.ThreadFactory} that names threads
++   */
++  public static ThreadFactory getNamedThreadFactory(final String prefix) {
++    SecurityManager s = System.getSecurityManager();
++    final ThreadGroup threadGroup = (s != null)
++        ? s.getThreadGroup()
++        : Thread.currentThread().getThreadGroup();
++
++    return new ThreadFactory() {
++      private final AtomicInteger threadNumber = new AtomicInteger(1);
++      private final int poolNum = poolNumber.getAndIncrement();
++      private final ThreadGroup group = threadGroup;
++
++      @Override
++      public Thread newThread(Runnable r) {
++        final String name = String.format("%s-pool%03d-t%04d",
++            prefix, poolNum, threadNumber.getAndIncrement());
++        return new Thread(group, r, name);
++      }
++    };
++  }
++
++  /**
++   * Get a named {@link ThreadFactory} that just builds daemon threads.
++   * @param prefix name prefix for all threads created from the factory
++   * @return a thread factory that creates named, daemon threads with
++   *         the supplied exception handler and normal priority
++   */
++  private static ThreadFactory newDaemonThreadFactory(final String prefix) {
++    final ThreadFactory namedFactory = getNamedThreadFactory(prefix);
++    return new ThreadFactory() {
++      @Override
++      public Thread newThread(Runnable r) {
++        Thread t = namedFactory.newThread(r);
++        if (!t.isDaemon()) {
++          t.setDaemon(true);
++        }
++        if (t.getPriority() != Thread.NORM_PRIORITY) {
++          t.setPriority(Thread.NORM_PRIORITY);
++        }
++        return t;
++      }
++
++    };
++  }
++
+   /** Called after a new FileSystem instance is constructed.
+    * @param name a uri whose authority section names the host, port, etc.
+    *   for this FileSystem
+@@ -184,27 +239,51 @@ public StorageStatistics provide() {
+                     }
+                   });
+ 
+-      if (conf.get("fs.s3a.threads.core") != null &&
+-          warnedOfCoreThreadDeprecation.compareAndSet(false, true)) {
+-        LoggerFactory.getLogger(
+-            "org.apache.hadoop.conf.Configuration.deprecation")
+-            .warn("Unsupported option \"fs.s3a.threads.core\"" +
+-                " will be ignored {}", conf.get("fs.s3a.threads.core"));
+-      }
+-      int maxThreads = conf.getInt(MAX_THREADS, DEFAULT_MAX_THREADS);
+-      if (maxThreads < 2) {
+-        LOG.warn(MAX_THREADS + " must be at least 2: forcing to 2.");
+-        maxThreads = 2;
+-      }
+-      int totalTasks = conf.getInt(MAX_TOTAL_TASKS, DEFAULT_MAX_TOTAL_TASKS);
+-      if (totalTasks < 1) {
+-        LOG.warn(MAX_TOTAL_TASKS + "must be at least 1: forcing to 1.");
+-        totalTasks = 1;
++      if (conf.getBoolean(ENABLE_BLOCKING_EXECUTOR, false)) {
++        if (conf.get("fs.s3a.threads.core") != null &&
++            warnedOfCoreThreadDeprecation.compareAndSet(false, true)) {
++          LoggerFactory.getLogger(
++              "org.apache.hadoop.conf.Configuration.deprecation")
++              .warn("Unsupported option \"fs.s3a.threads.core\"" +
++                  " will be ignored {}", conf.get("fs.s3a.threads.core"));
++        }
++        int maxThreads = conf.getInt(MAX_THREADS, DEFAULT_MAX_THREADS);
++        if (maxThreads < 2) {
++          LOG.warn(MAX_THREADS + " must be at least 2: forcing to 2.");
++          maxThreads = 2;
++        }
++        int totalTasks = conf.getInt(MAX_TOTAL_TASKS, DEFAULT_MAX_TOTAL_TASKS);
++        if (totalTasks < 1) {
++          LOG.warn(MAX_TOTAL_TASKS + "must be at least 1: forcing to 1.");
++          totalTasks = 1;
++        }
++        long keepAliveTime = conf.getLong(KEEPALIVE_TIME, DEFAULT_KEEPALIVE_TIME);
++        threadPoolExecutor = new BlockingThreadPoolExecutorService(maxThreads,
++            maxThreads + totalTasks, keepAliveTime, TimeUnit.SECONDS,
++            "s3a-transfer-shared");
++      } else {
++        int maxThreads = intOption(conf, MAX_THREADS, DEFAULT_MAX_THREADS, 0);
++        int coreThreads = intOption(conf, CORE_THREADS, DEFAULT_CORE_THREADS, 0);
++        if (maxThreads == 0) {
++          maxThreads = Runtime.getRuntime().availableProcessors() * 8;
++        }
++        if (coreThreads == 0) {
++          coreThreads = Runtime.getRuntime().availableProcessors() * 8;
++        }
++        long keepAliveTime = longOption(conf, KEEPALIVE_TIME,
++            DEFAULT_KEEPALIVE_TIME, 0);
++        LinkedBlockingQueue<Runnable> workQueue =
++            new LinkedBlockingQueue<>(maxThreads *
++                intOption(conf, MAX_TOTAL_TASKS, DEFAULT_MAX_TOTAL_TASKS, 1));
++        threadPoolExecutor = new ThreadPoolExecutor(
++            coreThreads,
++            maxThreads,
++            keepAliveTime,
++            TimeUnit.SECONDS,
++            workQueue,
++            newDaemonThreadFactory("s3a-transfer-shared-"));
++        ((ThreadPoolExecutor)threadPoolExecutor).allowCoreThreadTimeOut(true);
+       }
+-      long keepAliveTime = conf.getLong(KEEPALIVE_TIME, DEFAULT_KEEPALIVE_TIME);
+-      threadPoolExecutor = new BlockingThreadPoolExecutorService(maxThreads,
+-          maxThreads + totalTasks, keepAliveTime, TimeUnit.SECONDS,
+-          "s3a-transfer-shared");
+ 
+       initTransferManager();
+ 
+diff --git a/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md b/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
+index 269c943..520304f 100644
+--- a/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
++++ b/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
+@@ -691,7 +691,7 @@ from placing its declaration on the command line.
+ 
+     <property>
+       <name>fs.s3a.threads.max</name>
+-      <value>10</value>
++      <value>256</value>
+       <description> Maximum number of concurrent active (part)uploads,
+       which each use a thread from the threadpool.</description>
+     </property>
+@@ -709,6 +709,12 @@ from placing its declaration on the command line.
+     </property>
+ 
+     <property>
++      <name>fs.s3a.threads.core</name>
++      <value>15</value>
++      <description>Number of core threads in the threadpool.</description>
++    </property>
++
++    <property>
+       <name>fs.s3a.threads.keepalivetime</name>
+       <value>60</value>
+       <description>Number of seconds a thread can be idle before being
+@@ -717,7 +723,7 @@ from placing its declaration on the command line.
+ 
+     <property>
+       <name>fs.s3a.max.total.tasks</name>
+-      <value>5</value>
++      <value>1000</value>
+       <description>Number of (part)uploads allowed to the queue before
+       blocking additional uploads.</description>
+     </property>
+-- 
+1.7.9.5
+

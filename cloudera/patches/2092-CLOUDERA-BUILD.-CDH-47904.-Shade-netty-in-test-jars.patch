@@ -1,0 +1,41 @@
+From 2787e2e2d43123c53f46555ed06ff9be18ba032a Mon Sep 17 00:00:00 2001
+From: Andrew Wang <andrew.wang@cloudera.com>
+Date: Mon, 5 Dec 2016 15:02:25 -0800
+Subject: [PATCH 2092/2102] CLOUDERA-BUILD. CDH-47904. Shade netty in test
+ jars.
+
+Change-Id: Ideec1fa5a38661773b2c9ac5670a693ccc7d7896
+(cherry picked from commit fd4862c9d8a696cc9d597fec50c09e7b05e25af5)
+(cherry picked from commit a2ab8417c1f4f10d218f46632b5590b82292fb4a)
+---
+ hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml |    1 +
+ hadoop-hdfs-project/hadoop-hdfs/pom.xml     |    1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml b/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml
+index 466725c..f72028a 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml
+@@ -257,6 +257,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                 </goals>
+                 <configuration>
+                   <createDependencyReducedPom>false</createDependencyReducedPom>
++                  <shadeTestJar>false</shadeTestJar>
+                   <artifactSet>
+                     <includes>
+                       <include>io.netty:netty-all:jar:*</include>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/pom.xml b/hadoop-hdfs-project/hadoop-hdfs/pom.xml
+index 0a719c4..819fdfa 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/pom.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs/pom.xml
+@@ -567,6 +567,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
+             </goals>
+             <configuration>
+               <createDependencyReducedPom>false</createDependencyReducedPom>
++              <shadeTestJar>true</shadeTestJar>
+               <artifactSet>
+                 <includes>
+                   <include>io.netty:netty-all:jar:*</include>
+-- 
+1.7.9.5
+

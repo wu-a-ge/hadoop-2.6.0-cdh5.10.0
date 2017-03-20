@@ -1,0 +1,57 @@
+From 307b3de961d083f6e8ee80ddba589f22cacd3662 Mon Sep 17 00:00:00 2001
+From: Sean Mackrory <sean@cloudera.com>
+Date: Wed, 14 Dec 2016 11:44:36 -0700
+Subject: [PATCH 2102/2102] CLOUDERA-BUILD. Using long value directly for
+ memory defaults changed in HADOOP-13868.
+
+Change-Id: Id65435ccaf9e76ad0ca9a6825266c792ab9c8e79
+---
+ .../src/main/resources/core-default.xml            |    4 ++--
+ .../src/site/markdown/tools/hadoop-aws/index.md    |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml b/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
+index 2428899..6766671 100644
+--- a/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
++++ b/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml
+@@ -963,13 +963,13 @@ for ldap providers in the same way as above does.
+ 
+ <property>
+   <name>fs.s3a.multipart.size</name>
+-  <value>64M</value>
++  <value>67108864</value>
+   <description>How big (in bytes) to split upload or copy operations up into.</description>
+ </property>
+ 
+ <property>
+   <name>fs.s3a.multipart.threshold</name>
+-  <value>128M</value>
++  <value>134217728</value>
+   <description>How big (in bytes) to split upload or copy operations up into.
+     This also controls the partition size in renamed files, as rename() involves
+     copying the source file(s)
+diff --git a/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md b/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
+index 09dcf97..59af409 100644
+--- a/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
++++ b/hadoop-tools/hadoop-aws/src/site/markdown/tools/hadoop-aws/index.md
+@@ -730,7 +730,7 @@ from placing its declaration on the command line.
+ 
+     <property>
+       <name>fs.s3a.multipart.size</name>
+-      <value>64M</value>
++      <value>67108864</value>
+       <description>How big (in bytes) to split upload or copy operations up into.
+       This also controls the partition size in renamed files, as rename() involves
+       copying the source file(s)</description>
+@@ -738,7 +738,7 @@ from placing its declaration on the command line.
+ 
+     <property>
+       <name>fs.s3a.multipart.threshold</name>
+-      <value>128M</value>
++      <value>134217728</value>
+       <description>Threshold before uploads or copies use parallel multipart operations.</description>
+     </property>
+ 
+-- 
+1.7.9.5
+
