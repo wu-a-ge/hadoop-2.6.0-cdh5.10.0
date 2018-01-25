@@ -93,11 +93,15 @@ public class LeafQueue extends AbstractCSQueue {
   private int maxActiveApplicationsPerUser;
   
   private int nodeLocalityDelay;
-
+  /**
+   * 按APPID排序就是按提交的先后顺序排序,FIFO
+   */
   Set<FiCaSchedulerApp> activeApplications;
   Map<ApplicationAttemptId, FiCaSchedulerApp> applicationAttemptMap = 
       new HashMap<ApplicationAttemptId, FiCaSchedulerApp>();
-  
+  /**
+   * 按APPID排序就是按提交的先后顺序排序,FIFO
+   */
   Set<FiCaSchedulerApp> pendingApplications;
   
   private final float minimumAllocationFactor;
@@ -755,12 +759,17 @@ public class LeafQueue extends AbstractCSQueue {
 
       synchronized (application) {
         // Check if this resource is on the blacklist
+    	//此APP已经将此NODE加入了黑名单，不在此节点上进行调度容器
         if (SchedulerAppUtils.isBlacklisted(application, node, LOG)) {
           continue;
         }
         
         // Schedule in priority order
+        //按优先级选取资源请求进行调度
         for (Priority priority : application.getPriorities()) {
+          //同一个优先级和容量会按多主机（-local），多机架(rack-local)及off-switch会分别封装多个资源请求，以便调度器能从多维度选择调度
+          //从这里的条件判断，data-local和rack-local不一定有相应的资源请求（reduce就没有data-local），但是off-switch资源请求是必须要存在的，不然可能无法调度！
+          //所以这里使用ANY资源名获取资源来验证资源可调度性
           ResourceRequest anyRequest =
               application.getResourceRequest(priority, ResourceRequest.ANY);
           if (null == anyRequest) {
@@ -807,7 +816,7 @@ public class LeafQueue extends AbstractCSQueue {
               application, true, requestedNodeLabels)) {
             break;
           }
-
+          //每个优先级有一个调度机会，如果造成非本地化的调度会跳过，最大跳过次数为NM节点数
           // Inform the application it is about to get a scheduling opportunity
           application.addSchedulingOpportunity(priority);
           
@@ -817,6 +826,7 @@ public class LeafQueue extends AbstractCSQueue {
                 null, needToUnreserve);
 
           // Did the application skip this node?
+          //对于跳过的节点还不能计数调度机会
           if (assignment.getSkipped()) {
             // Don't count 'skipped nodes' as a scheduling opportunity!
             application.subtractSchedulingOpportunity(priority);
@@ -1216,6 +1226,17 @@ public class LeafQueue extends AbstractCSQueue {
     return (((starvation + requiredContainers) - reservedContainers) > 0);
   }
 
+  /**
+   * LOCAL，RACK，ANY这三种资源名按顺序尝试调度
+   * @author fulaihua 2018年1月25日 下午2:48:43
+   * @param clusterResource
+   * @param node
+   * @param application
+   * @param priority
+   * @param reservedContainer
+   * @param needToUnreserve
+   * @return
+   */
   private CSAssignment assignContainersOnNode(Resource clusterResource,
       FiCaSchedulerNode node, FiCaSchedulerApp application, Priority priority,
       RMContainer reservedContainer, boolean needToUnreserve) {
@@ -1420,6 +1441,7 @@ public class LeafQueue extends AbstractCSQueue {
     // If we are here, we do need containers on this rack for RACK_LOCAL req
     if (type == NodeType.RACK_LOCAL) {
       // 'Delay' rack-local just a little bit...
+      //延迟调度，它最多可以跳过的调度机会是NM节点数
       long missedOpportunities = application.getSchedulingOpportunities(priority);
       return (
           Math.min(scheduler.getNumClusterNodes(), getNodeLocalityDelay()) < 
@@ -1491,7 +1513,7 @@ public class LeafQueue extends AbstractCSQueue {
     Resource capability = request.getCapability();
     Resource available = node.getAvailableResource();
     Resource totalResource = node.getTotalResource();
-
+    //TODO：有必要总资源和需求资源进行比较吗？直接使用可获得资源和需求资源比不就可以了！不明白！
     if (!Resources.fitsIn(capability, totalResource)) {
       LOG.warn("Node : " + node.getNodeID()
           + " does not have sufficient resource for request : " + request
@@ -1522,7 +1544,7 @@ public class LeafQueue extends AbstractCSQueue {
         LOG.debug("can alloc container is: " + canAllocContainer);
       }
     }
-
+    //可获得资源和需求资源进行比较，这才是有意义的！
     // Can we allocate a container on this node?
     int availableContainers = 
         resourceCalculator.computeAvailableContainers(available, capability);

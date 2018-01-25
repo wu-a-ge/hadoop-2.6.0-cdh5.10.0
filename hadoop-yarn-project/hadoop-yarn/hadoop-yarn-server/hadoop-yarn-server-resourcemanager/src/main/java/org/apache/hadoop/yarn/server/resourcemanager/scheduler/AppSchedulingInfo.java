@@ -155,10 +155,11 @@ public class AppSchedulingInfo {
         // Thus we don't need another loop ala the one in decrementOutstanding()  
         // which is needed during deactivate.
         if (request.getNumContainers() > 0) {
+         //更新metrics
           activeUsersManager.activateApplication(user, applicationId);
         }
       }
-
+      
       Map<String, ResourceRequest> asks = this.requests.get(priority);
 
       if (asks == null) {
@@ -173,8 +174,9 @@ public class AppSchedulingInfo {
         // single container.
         request.setNumContainers(lastRequest.getNumContainers() + 1);
       }
-
+      //相同资源资源的直接覆盖？
       asks.put(resourceName, request);
+      //更新metrics
       if (updatePendingResources) {
         
         // Similarly, deactivate application?

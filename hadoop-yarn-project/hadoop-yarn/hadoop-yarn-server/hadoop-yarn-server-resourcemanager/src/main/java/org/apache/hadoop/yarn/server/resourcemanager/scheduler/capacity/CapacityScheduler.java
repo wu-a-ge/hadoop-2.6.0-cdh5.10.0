@@ -1010,6 +1010,7 @@ public class CapacityScheduler extends
   }
 
   private synchronized void allocateContainersToNode(FiCaSchedulerNode node) {
+	//启动了恢复机制，如果当前处于恢复阶段，不调度容器
     if (rmContext.isWorkPreservingRecoveryEnabled()
         && !rmContext.isSchedulerReadyForAllocatingContainers()) {
       return;
@@ -1020,6 +1021,7 @@ public class CapacityScheduler extends
     // 2. Schedule if there are no reservations
 
     RMContainer reservedContainer = node.getReservedContainer();
+    //优先解决资源保留的容器，一般这种容器都是需要大内存或多CPU。
     if (reservedContainer != null) {
       FiCaSchedulerApp reservedApplication =
           getCurrentAttemptForContainer(reservedContainer.getContainerId());
@@ -1046,7 +1048,7 @@ public class CapacityScheduler extends
       }
 
     }
-
+    //如果这个节点有保留的容器，直接跳过调度，给留出资源！
     // Try to schedule more if there are no reservations to fulfill
     if (node.getReservedContainer() == null) {
       if (calculator.computeAvailableContainers(node.getAvailableResource(),

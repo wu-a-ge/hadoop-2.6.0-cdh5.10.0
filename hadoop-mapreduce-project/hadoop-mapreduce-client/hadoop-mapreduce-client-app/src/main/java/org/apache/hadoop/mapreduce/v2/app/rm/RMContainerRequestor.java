@@ -385,7 +385,12 @@ public abstract class RMContainerRequestor extends RMCommunicator {
   protected Resource getAvailableResources() {
     return availableResources == null ? Resources.none() : availableResources;
   }
-  
+  /**
+   * 为了调度器通过DATA-LOCAL，RACK-LOCAL，OFF-SWITCH三种方式获取到资源请求，
+   * Off-switch这种资源请求必须要存在，它是最低级资源调度
+   * @author fulaihua 2018年1月25日 下午3:57:34
+   * @param req
+   */
   protected void addContainerReq(ContainerRequest req) {
     // Create resource requests
     for (String host : req.hosts) {
