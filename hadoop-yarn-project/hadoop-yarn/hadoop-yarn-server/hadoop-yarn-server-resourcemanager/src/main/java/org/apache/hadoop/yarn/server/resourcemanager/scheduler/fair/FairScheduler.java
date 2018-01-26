@@ -1139,15 +1139,15 @@ public class FairScheduler extends
 
   private boolean shouldContinueAssigning(int containers,
       Resource maxResourcesToAssign, Resource assignedResource) {
-    if (!assignMultiple) {
+    if (!assignMultiple) {//默认不允许一次心跳分配多个容器，可以考虑开启
       return false; // assignMultiple is not enabled. Allocate one at a time.
     }
-
+    //默认动态最大分配启用
     if (maxAssignDynamic) {
       // Using fitsIn to check if the resources assigned so far are less than
       // or equal to max resources to assign (half of remaining resources).
       // The "equal to" part can lead to allocating one extra container.
-      return Resources.fitsIn(assignedResource, maxResourcesToAssign);
+      return Resources.fitsIn(assignedResource, maxResourcesToAssign);//不能超过一半的资源容量
     } else {
       return maxAssign <= 0 || containers < maxAssign;
     }
@@ -1184,6 +1184,7 @@ public class FairScheduler extends
       Resource assignedResource = Resources.clone(Resources.none());
       Resource maxResourcesToAssign =
           Resources.multiply(node.getAvailableResource(), 0.5f);
+      //循环分配，一直分配到不满足shouldContinueAssigning方法的条件
       while (node.getReservedContainer() == null) {
         boolean assignedContainer = false;
         Resource assignment = queueMgr.getRootQueue().assignContainer(node);

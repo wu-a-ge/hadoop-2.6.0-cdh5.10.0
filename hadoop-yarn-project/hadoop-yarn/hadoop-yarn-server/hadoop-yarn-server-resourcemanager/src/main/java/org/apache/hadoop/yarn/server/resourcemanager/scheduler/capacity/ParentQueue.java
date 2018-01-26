@@ -425,7 +425,7 @@ public class ParentQueue extends AbstractCSQueue {
         labelManager.getLabelsOnNode(node.getNodeID()))) {
       return assignment;
     }
-    
+    //循环分配容器，根队列才有这个权限
     while (canAssign(clusterResource, node)) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Trying to assign containers to child-queue of "
@@ -468,7 +468,7 @@ public class ParentQueue extends AbstractCSQueue {
             " cluster=" + clusterResource);
 
       } else {
-        break;
+        break;//子队列分配失败，直接退出
       }
 
       if (LOG.isDebugEnabled()) {
@@ -480,6 +480,8 @@ public class ParentQueue extends AbstractCSQueue {
 
       // Do not assign more than one container if this isn't the root queue
       // or if we've already assigned an off-switch container
+      // 不管分配成功或失败，只有根队列才有机会循环分配容器，其它父队列不可以循环调度
+      //这个目的还是为了让每一个队列都有机会调度容器。
       if (!rootQueue || assignment.getType() == NodeType.OFF_SWITCH) {
         if (LOG.isDebugEnabled()) {
           if (rootQueue && assignment.getType() == NodeType.OFF_SWITCH) {
@@ -599,7 +601,7 @@ public class ParentQueue extends AbstractCSQueue {
         iter.remove();
         LOG.info("Re-sorting assigned queue: " + childQueue.getQueuePath() + 
             " stats: " + childQueue);
-        childQueues.add(childQueue);
+        childQueues.add(childQueue);//轮循为每一个子队列调度任务的机会
         if (LOG.isDebugEnabled()) {
           printChildQueues();
         }

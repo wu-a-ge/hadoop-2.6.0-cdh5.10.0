@@ -220,7 +220,7 @@ public class FSParentQueue extends FSQueue {
     // Hold the write lock when sorting childQueues
     writeLock.lock();
     try {
-      Collections.sort(childQueues, policy.getComparator());
+      Collections.sort(childQueues, policy.getComparator());//子队列也排序，优先分配哪个队列里面的任务
     } finally {
       writeLock.unlock();
     }
