@@ -174,7 +174,8 @@ public class AppSchedulingInfo {
         // single container.
         request.setNumContainers(lastRequest.getNumContainers() + 1);
       }
-      //相同资源资源的直接覆盖？
+      //相同资源名的直接覆盖？意味着同名资源（同一主机或同一机架），申请资源时容器数量放在一个请求里面？！
+      //分配如何搞？
       asks.put(resourceName, request);
       //更新metrics
       if (updatePendingResources) {

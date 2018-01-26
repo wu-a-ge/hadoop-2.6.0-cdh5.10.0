@@ -868,6 +868,7 @@ public class CapacityScheduler extends
     }
     
     // Sanity check
+    //资源分配只能最小值和最大值之间，这里进行调整到此区间
     SchedulerUtils.normalizeRequests(
         ask, getResourceCalculator(), getClusterResource(),
         getMinimumResourceCapability(), getMaximumResourceCapability());
@@ -906,7 +907,8 @@ public class CapacityScheduler extends
           " applicationAttemptId=" + applicationAttemptId + 
           " #ask=" + ask.size());
       }
-
+      //更新AM的黑名单列表，就是AM不希望调度到的NM节点，调度器调度时候会跳过这些节点
+      //AM端申请资源时也会跳过
       if (application.isWaitingForAMContainer(application.getApplicationId())) {
         // Allocate is for AM and update AM blacklist for this
         application.updateAMBlacklist(
@@ -1021,7 +1023,7 @@ public class CapacityScheduler extends
     // 2. Schedule if there are no reservations
 
     RMContainer reservedContainer = node.getReservedContainer();
-    //优先解决资源保留的容器，一般这种容器都是需要大内存或多CPU。
+    //优先调度资源保留的容器，如果分配失败，这个节点会被一直跳过，任何程序都无法调度，一直到留出足够的资源！！！
     if (reservedContainer != null) {
       FiCaSchedulerApp reservedApplication =
           getCurrentAttemptForContainer(reservedContainer.getContainerId());
@@ -1036,7 +1038,7 @@ public class CapacityScheduler extends
           false);
       
       RMContainer excessReservation = assignment.getExcessReservation();
-      if (excessReservation != null) {
+      if (excessReservation != null) {//分配成功，释放保留的资源 
       Container container = excessReservation.getContainer();
       queue.completedContainer(
           clusterResource, assignment.getApplication(), node, 
@@ -1048,7 +1050,7 @@ public class CapacityScheduler extends
       }
 
     }
-    //如果这个节点有保留的容器，直接跳过调度，给留出资源！
+    //没有保留容器，进行正常调度
     // Try to schedule more if there are no reservations to fulfill
     if (node.getReservedContainer() == null) {
       if (calculator.computeAvailableContainers(node.getAvailableResource(),
