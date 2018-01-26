@@ -81,6 +81,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
 
   // use custom comparator to make sure ResourceRequest objects differing only in 
   // numContainers dont end up as duplicates
+  //TODO:不考虑同步吗?不需要同步？生产，消费对象
   private final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(
       RESOURCE_REQUEST_COMPARATOR);
   private final Set<ContainerId> release = new TreeSet<ContainerId>();
@@ -387,7 +388,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
   }
   /**
    * 为了调度器通过DATA-LOCAL，RACK-LOCAL，OFF-SWITCH三种方式获取到资源请求，
-   * Off-switch这种资源请求必须要存在，它是最低级资源调度
+   * Off-switch这种资源请求必须要存在，它是在其它两种资源无法调度时的最差调度，可能理解为随机
    * @author fulaihua 2018年1月25日 下午3:57:34
    * @param req
    */
@@ -447,6 +448,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
       remoteRequest.setNumContainers(0);
       reqMap.put(capability, remoteRequest);
     }
+    //TODO:同一资源名的同一资源大小，只更新了容器数量？不断的在添加进ask,就是数量在增加
     remoteRequest.setNumContainers(remoteRequest.getNumContainers() + 1);
 
     // Note this down for next interaction with ResourceManager

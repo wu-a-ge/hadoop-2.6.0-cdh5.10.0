@@ -346,7 +346,6 @@ public class RMContainerAllocator extends RMContainerRequestor
       throw new YarnRuntimeException(e);
     }
   }
-
   protected synchronized void handleEvent(ContainerAllocatorEvent event) {
     recalculateReduceSchedule = true;
     if (event.getType() == ContainerAllocator.EventType.CONTAINER_REQ) {
@@ -449,7 +448,7 @@ public class RMContainerAllocator extends RMContainerRequestor
 
     Resource supportedMaxContainerCapability = getMaxContainerCapability();
     JobId jobId = getJob().getID();
-
+    //用的一个成员变量长期持久资源？是因为一个MR的MAP或Reduce所有任务申请同样大小的资源
     if (mapResourceRequest.equals(Resources.none())) {
       mapResourceRequest = reqEvent.getCapability();
       eventHandler.handle(new JobHistoryEvent(jobId,
@@ -470,6 +469,7 @@ public class RMContainerAllocator extends RMContainerRequestor
 
     if(mapContainerRequestAccepted) {
       // set the resources
+      //都用的第一个任务资源来设置后面的任务资源
       reqEvent.getCapability().setMemory(
           mapResourceRequest.getMemory());
       reqEvent.getCapability().setVirtualCores(
