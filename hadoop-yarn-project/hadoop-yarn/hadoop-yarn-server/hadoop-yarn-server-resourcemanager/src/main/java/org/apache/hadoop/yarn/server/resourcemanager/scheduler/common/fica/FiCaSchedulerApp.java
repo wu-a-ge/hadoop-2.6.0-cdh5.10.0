@@ -237,7 +237,7 @@ public class FiCaSchedulerApp extends SchedulerApplicationAttempt {
    */
   public synchronized Allocation getAllocation(ResourceCalculator rc,
       Resource clusterResource, Resource minimumAllocation) {
-
+	 //需要释放资源的容器ID
     Set<ContainerId> currentContPreemption = Collections.unmodifiableSet(
         new HashSet<ContainerId>(containersToPreempt));
     containersToPreempt.clear();
@@ -246,6 +246,10 @@ public class FiCaSchedulerApp extends SchedulerApplicationAttempt {
       Resources.addTo(tot,
           liveContainers.get(c).getContainer().getResource());
     }
+    //资源释放理论上是应该让APP来主动释放 ，只需要告诉它我需要的资源总量是多少，它自己去找容器释放资源
+    //但是APP是不可信任的，所以调度器就自己选了一些容器出来，发送给APP，达到了超时时间，直接杀掉容器。
+    //与其如此粗暴，是否可考虑两阶段提交，一阶段告诉APP，你需要释放资源出来，资源释放出来了
+    //皆大欢喜，第二阶段，在一定的时间间隔没有释放资源，我就筛选容器强行杀掉！
     int numCont = (int) Math.ceil(
         Resources.divide(rc, clusterResource, tot, minimumAllocation));
     ResourceRequest rr = ResourceRequest.newInstance(

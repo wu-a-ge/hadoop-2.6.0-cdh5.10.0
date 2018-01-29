@@ -747,7 +747,13 @@ public class RMContainerAllocator extends RMContainerRequestor
       rampDown--;
     }
   }
-  
+  /**
+   * 没有处理抢占式行为，调度器发过的需要释放资源的容器直接忽略了，意思就是让调度器杀！！！
+   * 但是这样不怕因为杀了次数过多而任务失败？？？？
+   * @author fulaihua 2018年1月29日 下午4:36:28
+   * @return
+   * @throws Exception
+   */
   @SuppressWarnings("unchecked")
   private List<Container> getResources() throws Exception {
     applyConcurrentTaskLimits();
