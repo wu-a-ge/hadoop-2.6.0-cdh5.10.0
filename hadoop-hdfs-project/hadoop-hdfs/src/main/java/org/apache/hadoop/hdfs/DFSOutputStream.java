@@ -1164,7 +1164,7 @@ public class DFSOutputStream extends FSOutputSummer
                 one.setTraceScope(null);
               }
               lastAckedSeqno = seqno;
-              pipelineRecoveryCount = 0;
+              pipelineRecoveryCount = 0;//得到正确的应答，将此值清空
               ackQueue.removeFirst();
               dataQueue.notifyAll();
 
@@ -1202,11 +1202,18 @@ public class DFSOutputStream extends FSOutputSummer
         this.interrupt();
       }
     }
-
-    // If this stream has encountered any errors so far, shutdown 
-    // threads and mark stream as closed. Returns true if we should
-    // sleep for a while after returning from this call.
-    //
+    /**
+     * If this stream has encountered any errors so far, shutdown 
+     * threads and mark stream as closed. Returns true if we should
+     * sleep for a while after returning from this call.
+     * 1.关闭输出和应答流
+     * 2.应答队列放回原队列
+     * 3.如果同一个packet失败5次，要求streamer关闭
+     * 4.否则调用setupPipelineForAppendOrRecovery方法重新建立管线
+     * @author fulaihua 2018年1月30日 下午1:48:40
+     * @return
+     * @throws IOException
+     */
     private boolean processDatanodeError() throws IOException {
       if (response != null) {
         DFSClient.LOG.info("Error Recovery for " + block +
@@ -1224,6 +1231,7 @@ public class DFSOutputStream extends FSOutputSummer
       // If we had to recover the pipeline five times in a row for the
       // same packet, this client likely has corrupt data or corrupting
       // during transmission.
+      //同一个packet发送， 最多只有失败5次，5次都发送失败，整个集群问题大了！！
       if (restartingNodeIndex == -1 && ++pipelineRecoveryCount > 5) {
         DFSClient.LOG.warn("Error recovering pipeline for writing " +
             block + ". Already retried 5 times for the same packet.");
@@ -1300,7 +1308,11 @@ public class DFSOutputStream extends FSOutputSummer
       throw new IOException("Failed: new datanode not found: nodes="
           + Arrays.asList(nodes) + ", original=" + Arrays.asList(original));
     }
-
+    /**
+     * 如果添加节点失败，最大可能是DN节点全部被排除完了，造成streamer退出，客户端写得到IO异常
+     * @author fulaihua 2018年1月30日 上午11:23:33
+     * @throws IOException
+     */
     private void addDatanode2ExistingPipeline() throws IOException {
       if (DataTransferProtocol.LOG.isDebugEnabled()) {
         DataTransferProtocol.LOG.debug("lastAckedSeqno = " + lastAckedSeqno);
@@ -1339,6 +1351,8 @@ public class DFSOutputStream extends FSOutputSummer
       final StorageType[] originalTypes = storageTypes;
       final String[] originalIDs = storageIDs;
       IOException caughtException = null;
+      //之前失败的节点就永远性的排除，是否太严了？为什么不使用定时移出失败节点？？？？
+      //如果服务端手动重启节点会造成无节点可用，全部排除完了
       ArrayList<DatanodeInfo> exclude = new ArrayList<DatanodeInfo>(failed);
       while (tried < 3) {
         LocatedBlock lb;
@@ -1415,6 +1429,11 @@ public class DFSOutputStream extends FSOutputSummer
      * it can be written to.
      * This happens when a file is appended or data streaming fails
      * It keeps on trying until a pipeline is setup
+     * 1.如果当前管理线中只剩一个节点，要求streamer关闭退出
+     * 2.否则移出失败节点到一个集合中，这个集合的失败节点永不移出
+     * 3.判断是否需要添加一个新的节点，如果在添加新节点失败了，会直接抛出异常造成streamer关闭
+     * 4.重新创建新的管线流，连接到第一个DN节点，如果失败又会设置状态和标志，让上一层调用去处理
+     * 5.通知NN，更新管线节点
      */
     private boolean setupPipelineForAppendOrRecovery() throws IOException {
       // check number of datanodes
@@ -1461,6 +1480,7 @@ public class DFSOutputStream extends FSOutputSummer
               pipelineMsg.append(", ");
             }
           }
+          //只有一个节点了，没法移出，直接退出
           if (nodes.length <= 1) {
             lastException.set(new IOException("All datanodes " + pipelineMsg
                 + " are bad. Aborting..."));
@@ -1581,6 +1601,7 @@ public class DFSOutputStream extends FSOutputSummer
     }
 
     /**
+     * 多次重试获取新块失败，会造成整个streamer退出，客户端正在写会得到IO异常
      * Open a DataOutputStream to a DataNode so that it can be written to.
      * This happens when a file is created and each time a new block is allocated.
      * Must get block ID and the IDs of the destinations from the namenode.
@@ -1618,7 +1639,7 @@ public class DFSOutputStream extends FSOutputSummer
         // Connect to first DataNode in the list.
         //
         success = createBlockOutputStream(nodes, storageTypes, 0L, false);
-
+        //连接第一个DN失败，抛弃块，排除此节点，循环重试，最大重试次数3,如果集群I/O太高，考虑调整重试次数
         if (!success) {
           DFSClient.LOG.warn("Abandoning " + block);
           dfsClient.namenode.abandonBlock(block, fileId, src,
