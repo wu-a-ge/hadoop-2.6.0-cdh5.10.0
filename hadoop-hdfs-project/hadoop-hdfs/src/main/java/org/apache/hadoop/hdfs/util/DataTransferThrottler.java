@@ -105,7 +105,7 @@ public class DataTransferThrottler {
       }
       long now = monotonicNow();
       long curPeriodEnd = curPeriodStart + period;
-
+      //在非常短的时间内数据传输达到了阀值，当前传输线程睡眠，等待时间窗口过去，一般是带宽指定太小了很快用完了。
       if ( now < curPeriodEnd ) {
         // Wait for next period so that curReserve can be increased.
         try {
@@ -115,11 +115,11 @@ public class DataTransferThrottler {
           // interrupt handling higher in the call stack executes.
           Thread.currentThread().interrupt();
           break;
-        }
+        }//传输数据的时间超过了时间窗口，但是还没有超过扩展窗口，增加剩余带宽
       } else if ( now <  (curPeriodStart + periodExtension)) {
         curPeriodStart = curPeriodEnd;
         curReserve += bytesPerPeriod;
-      } else {
+      } else {//数据传输超过了很多时间（有可能是I/O问题，有可能是一次数据量大)，作差，看剩多少剩余带宽。
         // discard the prev period. Throttler might not have
         // been used for a long time.
         curPeriodStart = now;
