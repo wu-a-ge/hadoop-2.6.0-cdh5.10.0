@@ -195,10 +195,12 @@ public class RMProxy<T> {
   @Private
   @VisibleForTesting
   public static RetryPolicy createRetryPolicy(Configuration conf) {
+	 //此参数是一个总和，在这个时间长度上，最多重试多少次。次数默认是它和时间间隔的一个比值
     long rmConnectWaitMS =
         conf.getLong(
             YarnConfiguration.RESOURCEMANAGER_CONNECT_MAX_WAIT_MS,
             YarnConfiguration.DEFAULT_RESOURCEMANAGER_CONNECT_MAX_WAIT_MS);
+    //每次重试的时间间隔
     long rmConnectionRetryIntervalMS =
         conf.getLong(
             YarnConfiguration.RESOURCEMANAGER_CONNECT_RETRY_INTERVAL_MS,
@@ -216,7 +218,7 @@ public class RMProxy<T> {
       long retryTime, long retryInterval) {
     long rmConnectWaitMS = retryTime;
     long rmConnectionRetryIntervalMS = retryInterval;
-
+    //如果最大连接时间-1，表示无限重试
     boolean waitForEver = (rmConnectWaitMS == -1);
     if (!waitForEver) {
       if (rmConnectWaitMS < 0) {
@@ -244,7 +246,7 @@ public class RMProxy<T> {
       final long failoverSleepMaxMs = conf.getLong(
           YarnConfiguration.CLIENT_FAILOVER_SLEEPTIME_MAX_MS,
           rmConnectionRetryIntervalMS);
-
+      //最大重试次数，如果没有指定此值，那么得到一个比值，否则使用指定值(在最大连接时间没有指定为-1的情况下)
       int maxFailoverAttempts = conf.getInt(
           YarnConfiguration.CLIENT_FAILOVER_MAX_ATTEMPTS, -1);
 
