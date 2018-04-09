@@ -379,15 +379,17 @@ public class DecommissionManager {
   private class Monitor implements Runnable {
     /**
      * The maximum number of blocks to check per tick.
+     *默认500000
      */
     private final int numBlocksPerCheck;
     /**
      * The maximum number of nodes to check per tick.
+     * 默认Integer.MAX_VALUE
      */
     private final int numNodesPerCheck;
     /**
      * The maximum number of nodes to track in outOfServiceNodeBlocks.
-     * A value of 0 means no limit.
+     * A value of 0 means no limit.default is 100
      */
     private final int maxConcurrentTrackedNodes;
     /**

@@ -595,12 +595,12 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <profiles>
     <profile>
       <id>native-win</id>
-      <activation>
+    <!--  <activation>
         <activeByDefault>false</activeByDefault>
         <os>
           <family>windows</family>
         </os>
-      </activation>
+      </activation> -->
       <properties>
         <runningWithNative>true</runningWithNative>
       </properties>
