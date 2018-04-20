@@ -83,10 +83,10 @@ public class DefaultImpersonationProvider implements ImpersonationProvider {
     Map<String,String> allMatchKeys = 
         conf.getValByRegex(usersGroupsRegEx);
     for(Entry<String, String> entry : allMatchKeys.entrySet()) {  
-      String aclKey = getAclKey(entry.getKey());
+      String aclKey = getAclKey(entry.getKey());//aclKey=hadoop.proxyuser.xxx
       if (!proxyUserAcl.containsKey(aclKey)) {
         proxyUserAcl.put(aclKey, new AccessControlList(
-            allMatchKeys.get(aclKey + CONF_USERS) ,
+            allMatchKeys.get(aclKey + CONF_USERS) ,//hadoop.proxyuser.xxx.users,hadoop.proxyuser.xxx.groups，组合在一起
             allMatchKeys.get(aclKey + CONF_GROUPS)));
       }
     }

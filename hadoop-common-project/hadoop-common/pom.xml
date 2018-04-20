@@ -651,11 +651,11 @@
 
     <profile>
       <id>native-win</id>
-      <activation>
+     <!-- <activation>
         <os>
           <family>Windows</family>
         </os>
-      </activation>
+      </activation> -->
       <properties>
         <snappy.prefix></snappy.prefix>
         <snappy.lib></snappy.lib>
