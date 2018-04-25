@@ -65,7 +65,13 @@ public class NameNodeHttpServer {
     this.nn = nn;
     this.bindAddress = bindAddress;
   }
-
+  /**
+   * 添加webhdfs认证过滤器和参数
+   * 添加webhdfs rest api
+   * @author fulaihua 2018年4月25日 下午10:38:30
+   * @param conf
+   * @throws IOException
+   */
   private void initWebHdfs(Configuration conf) throws IOException {
     if (WebHdfsFileSystem.isEnabled(conf, HttpServer2.LOG)) {
       // set user pattern based on configuration file
@@ -244,7 +250,12 @@ public class NameNodeHttpServer {
   void setStartupProgress(StartupProgress prog) {
     httpServer.setAttribute(STARTUP_PROGRESS_ATTRIBUTE_KEY, prog);
   }
-
+  /**
+   * 添加功能性http的servlet,像listPaths,data传输等
+   * @author fulaihua 2018年4月25日 下午10:41:47
+   * @param httpServer
+   * @param conf
+   */
   private static void setupServlets(HttpServer2 httpServer, Configuration conf) {
     httpServer.addInternalServlet("startupProgress",
         StartupProgressServlet.PATH_SPEC, StartupProgressServlet.class);
