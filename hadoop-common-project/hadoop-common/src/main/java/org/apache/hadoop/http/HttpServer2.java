@@ -369,9 +369,10 @@ public final class HttpServer2 implements FilterContainer {
     final String appDir = getWebAppsPath(b.name);
     this.webServer = new Server();
     this.adminsAcl = b.adminsAcl;
+    //设置当前进程所属的的web目录（上下文对象）
     this.webAppContext = createWebAppContext(b.name, b.conf, adminsAcl, appDir);
     try {
-      this.secretProvider =
+      this.secretProvider = //安全验证使用，具体不知道
           constructSecretProvider(b, webAppContext.getServletContext());
       this.webAppContext.getServletContext().setAttribute
           (AuthenticationFilter.SIGNER_SECRET_PROVIDER_ATTRIBUTE,
@@ -385,7 +386,18 @@ public final class HttpServer2 implements FilterContainer {
     this.findPort = b.findPort;
     initializeWebServer(b.name, b.hostName, b.conf, b.pathSpecs);
   }
-
+  /**
+   * 添加缺省webapp到上下文(hdfs,datanode等和logs,static等)
+   * <br/>添加过滤器（查询字符串转义过滤器，认证过滤器等，可自定义）
+   * <br/>添加缺省servlet(stacks,logLevel,jmx,conf,metrics等)
+   * @author fulaihua 2018年4月25日 下午10:14:47
+   * @param name
+   * @param hostName
+   * @param conf
+   * @param pathSpecs
+   * @throws FileNotFoundException
+   * @throws IOException
+   */
   private void initializeWebServer(String name, String hostName,
       Configuration conf, String[] pathSpecs)
       throws FileNotFoundException, IOException {
@@ -425,14 +437,14 @@ public final class HttpServer2 implements FilterContainer {
     webServer.addHandler(webAppContext);
 
     addDefaultApps(contexts, appDir, conf);
-
+    //http查询字符串转义过滤器
     addGlobalFilter("safety", QuotingInputFilter.class.getName(), null);
     final FilterInitializer[] initializers = getFilterInitializers(conf);
     if (initializers != null) {
       conf = new Configuration(conf);
       conf.set(BIND_ADDRESS, hostName);
       for (FilterInitializer c : initializers) {
-        c.initFilter(this, conf);
+        c.initFilter(this, conf); //向webserver注册自定义过滤器。默认实现是认证过滤
       }
     }
 
@@ -577,6 +589,7 @@ public final class HttpServer2 implements FilterContainer {
       final String appDir, Configuration conf) throws IOException {
     // set up the context for "/logs/" if "hadoop.log.dir" property is defined
     // and it's enabled.
+	//是否将hadoop日志目录发布到HTTP。，默认启用，其实作用不大，日志文件太大，浏览器不方便
     String logDir = System.getProperty("hadoop.log.dir");
     boolean logsEnabled = conf.getBoolean(
         CommonConfigurationKeys.HADOOP_HTTP_LOGS_ENABLED,
@@ -599,6 +612,7 @@ public final class HttpServer2 implements FilterContainer {
       defaultContexts.put(logContext, true);
     }
     // set up the context for "/static/*"
+    //静态资源添加到上下文
     Context staticContext = new Context(parent, "/static");
     staticContext.setResourceBase(appDir + "/static");
     staticContext.addServlet(DefaultServlet.class, "/*");
