@@ -475,7 +475,7 @@ public class CapacitySchedulerConfiguration extends Configuration {
         LOG.debug("CSConf - getCapacityOfLabel: prefix="
             + getNodeLabelPrefix(queue, label) + ", capacity=" + capacity);
       }
-      
+      //root也没有给100值，而是统一的0，那么需要在配置文件中强制指定!
       nodeLabelCapacities.put(label, capacity / 100f);
     }
     return nodeLabelCapacities;

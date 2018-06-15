@@ -142,29 +142,32 @@ public class LeafQueue extends AbstractCSQueue {
     int userLimit = cs.getConfiguration().getUserLimit(getQueuePath());
     float userLimitFactor = 
       cs.getConfiguration().getUserLimitFactor(getQueuePath());
-
+    //表示队列最大可提交APP，include pending or running,超过此值直接拒绝
     int maxApplications =
         cs.getConfiguration().getMaximumApplicationsPerQueue(getQueuePath());
     if (maxApplications < 0) {
       int maxSystemApps = cs.getConfiguration().getMaximumSystemApplications();
       maxApplications = (int)(maxSystemApps * absoluteCapacity);
     }
+    //表示每个用户最大可提交APP，include pending or running,超过此值直接拒绝
     maxApplicationsPerUser = 
       (int)(maxApplications * (userLimit / 100.0f) * userLimitFactor);
 
     float maxAMResourcePerQueuePercent = cs.getConfiguration()
         .getMaximumApplicationMasterResourcePerQueuePercent(getQueuePath());
-    int maxActiveApplications = 
+    //队列最大可运行的APP
+    int maxActiveApplications = //页面 Max Schedulable Applications
         CSQueueUtils.computeMaxActiveApplications(
             resourceCalculator,
             cs.getClusterResource(), this.minimumAllocation,
             maxAMResourcePerQueuePercent, absoluteMaxCapacity);
-    this.maxActiveAppsUsingAbsCap = 
+    this.maxActiveAppsUsingAbsCap = //
             CSQueueUtils.computeMaxActiveApplications(
                 resourceCalculator,
                 cs.getClusterResource(), this.minimumAllocation,
                 maxAMResourcePerQueuePercent, absoluteCapacity);
-    int maxActiveApplicationsPerUser =
+    //队列中用户最大可运行的APP
+    int maxActiveApplicationsPerUser = //页面  Max Schedulable Applications Per User
         CSQueueUtils.computeMaxActiveApplicationsPerUser(
             maxActiveAppsUsingAbsCap, userLimit, userLimitFactor);
 
@@ -767,7 +770,7 @@ public class LeafQueue extends AbstractCSQueue {
         // Schedule in priority order
         //按优先级选取资源请求进行调度
         for (Priority priority : application.getPriorities()) {
-          //同一个优先级和容量会按多主机（-local），多机架(rack-local)及off-switch会分别封装多个资源请求，以便调度器能从多维度选择调度
+          //同一个优先级和容量会按多主机（-local），多机架(rack-local)及off-switch会分别封装多个资源请求（一个资源请求会封装多个出来），以便调度器能从多维度选择调度
           //从这里的条件判断，data-local和rack-local不一定有相应的资源请求（reduce就没有data-local），但是off-switch资源请求是必须要存在的，不然可能无法调度！
           //所以这里使用ANY资源名获取资源来验证资源可调度性
           ResourceRequest anyRequest =
@@ -1074,16 +1077,18 @@ public class LeafQueue extends AbstractCSQueue {
     if (requestedLabels != null && !requestedLabels.isEmpty()) {
       // if we have multiple labels to request, we will choose to use the first
       // label
+      //如果有标签，队列容量只计算打了指定标签的所有机器
       String firstLabel = requestedLabels.iterator().next();
       queueCapacity =
           Resources
               .max(resourceCalculator, clusterResource, queueCapacity,
                   Resources.multiplyAndNormalizeUp(resourceCalculator,
                       labelManager.getResourceByLabel(firstLabel,
-                          clusterResource),
+                          clusterResource),//标签的资源，多个机器打上了此标签！
                       getAbsoluteCapacityByNodeLabel(firstLabel),
                       minimumAllocation));
     } else {
+      //没有标签，算的是没有打标签的所有机器
       // else there's no label on request, just to use absolute capacity as
       // capacity for nodes without label
       queueCapacity =
@@ -1119,15 +1124,15 @@ public class LeafQueue extends AbstractCSQueue {
                 Resources.max(
                     resourceCalculator, clusterResource, 
                     Resources.divideAndCeil(
-                        resourceCalculator, currentCapacity, activeUsers),
+                        resourceCalculator, currentCapacity, activeUsers),//每个用户平均资源
                     Resources.divideAndCeil(
                         resourceCalculator, 
                         Resources.multiplyAndRoundDown(
                             currentCapacity, userLimit), 
-                        100)
-                    ), 
+                        100)//每个用户百分比资源
+                    ), //取两者的最大值
                 Resources.multiplyAndRoundDown(queueCapacity, userLimitFactor)
-                ), 
+                ), //为什么这里取最小呢？队列容量*factor，表示此用户可以使用超过队列的容量多少，factor为1，肯定不能超过！
             minimumAllocation);
 
     if (LOG.isDebugEnabled()) {

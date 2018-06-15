@@ -252,7 +252,7 @@ public class RMNodeLabelsManager extends CommonNodeLabelsManager {
             NodeId nodeId = nentry.getKey();
             Node nm = nentry.getValue();
             if (nm.running && isNodeUsableByQueue(getLabelsByNode(nodeId), q)) {
-              Resources.addTo(q.resource, nm.resource);
+              Resources.addTo(q.resource, nm.resource);//队列在所有打了标签节点的资源直接累加
             }
           }
         }

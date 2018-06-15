@@ -176,7 +176,7 @@ class CSQueueUtils {
       ResourceCalculator resourceCalculator, Resource clusterResource, CSQueue queue) {
       CSQueue parent = queue.getParent();
       if (parent == null) {
-        return queue.getAbsoluteMaximumCapacity();
+        return queue.getAbsoluteMaximumCapacity();//父队列 直接返回最大绝对百分比
       }
 
       //Get my parent's max avail, needed to determine my own

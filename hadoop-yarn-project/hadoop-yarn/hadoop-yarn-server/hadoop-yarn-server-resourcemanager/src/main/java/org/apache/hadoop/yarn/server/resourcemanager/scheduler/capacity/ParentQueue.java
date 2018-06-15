@@ -160,6 +160,7 @@ public class ParentQueue extends AbstractCSQueue {
   private static float PRECISION = 0.0005f; // 0.05% precision
   void setChildQueues(Collection<CSQueue> childQueues) {
     // Validate
+	 //所有子队列的容量加上应该是100
     float childCapacities = 0;
     for (CSQueue queue : childQueues) {
       childCapacities += queue.getCapacity();
@@ -173,6 +174,8 @@ public class ParentQueue extends AbstractCSQueue {
       		" for children of queue " + queueName);
     }
     // check label capacities
+    //所有子队列标签的容量加起来应试是100，如果子队列指定了容量，而父队列没有指定容量或子队列加起来不等于父队列是要报错的
+    //root必须指定所有标签为容量100,各个子队列再各自指定容量!
     for (String nodeLabel : labelManager.getClusterNodeLabels()) {
       float capacityByLabel = getCapacityByNodeLabel(nodeLabel);
       // check children's labels
@@ -506,7 +509,7 @@ public class ParentQueue extends AbstractCSQueue {
       // Any queue can always access any node without label
       labelCanAccess.add(RMNodeLabelsManager.NO_LABEL);
     }
-    
+    //节点上任何一个标签分配没有超过限制那么可以在此节点分配资源
     boolean canAssign = true;
     for (String label : labelCanAccess) {
       if (!usedResourcesByNodeLabels.containsKey(label)) {
@@ -565,7 +568,13 @@ public class ParentQueue extends AbstractCSQueue {
     return false;
    }
 
-  
+  /**
+   * 判断当前节点是否有足够的资源
+   * @author fulaihua 2018年6月15日 下午4:43:27
+   * @param clusterResource
+   * @param node
+   * @return
+   */
   private boolean canAssign(Resource clusterResource, FiCaSchedulerNode node) {
     return (node.getReservedContainer() == null) && 
         Resources.greaterThanOrEqual(resourceCalculator, clusterResource, 
@@ -601,7 +610,7 @@ public class ParentQueue extends AbstractCSQueue {
         iter.remove();
         LOG.info("Re-sorting assigned queue: " + childQueue.getQueuePath() + 
             " stats: " + childQueue);
-        childQueues.add(childQueue);//轮循为每一个子队列调度任务的机会
+        childQueues.add(childQueue);//此集合是按队列的容量使用情况排序，容量使用少的排前面，优先分配!
         if (LOG.isDebugEnabled()) {
           printChildQueues();
         }

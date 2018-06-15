@@ -100,9 +100,10 @@ public abstract class AbstractCSQueue implements CSQueue {
         QueueMetrics.forQueue(getQueuePath(), parent,
             cs.getConfiguration().getEnableUserMetrics(),
             cs.getConf());
-    
+    //root queue 可以访问所有标签,集合只有一个元素(*号)
     // get labels
     this.accessibleLabels = cs.getConfiguration().getAccessibleNodeLabels(getQueuePath());
+   
     this.defaultLabelExpression = cs.getConfiguration()
         .getDefaultNodeLabelExpression(getQueuePath());
 
@@ -118,12 +119,12 @@ public abstract class AbstractCSQueue implements CSQueue {
         && this.accessibleLabels.containsAll(parent.getAccessibleNodeLabels())) {
       this.defaultLabelExpression = parent.getDefaultNodeLabelExpression();
     }
-    
+    //root 肯定是0
     // set capacity by labels
     capacitiyByNodeLabels =
         cs.getConfiguration().getNodeLabelCapacities(getQueuePath(), accessibleLabels,
             labelManager);
-
+    //root 肯定是0
     // set maximum capacity by labels
     maxCapacityByNodeLabels =
         cs.getConfiguration().getMaximumNodeLabelCapacities(getQueuePath(),
@@ -307,17 +308,15 @@ public abstract class AbstractCSQueue implements CSQueue {
         }
       }
     }
-    
     // calculate absolute capacity by each node label
     this.absoluteCapacityByNodeLabels =
         CSQueueUtils.computeAbsoluteCapacityByNodeLabels(
             this.capacitiyByNodeLabels, parent);
-    
     // calculate maximum capacity by each node label
     this.absoluteMaxCapacityByNodeLabels =
         CSQueueUtils.computeAbsoluteMaxCapacityByNodeLabels(
             maximumNodeLabelCapacities, parent);
-    
+    //TODO:BUG,没有使用最大集合
     // check absoluteMaximumNodeLabelCapacities is valid
     CSQueueUtils.checkAbsoluteCapacitiesByLabel(getQueueName(),
         absoluteCapacityByNodeLabels, absoluteCapacityByNodeLabels);
