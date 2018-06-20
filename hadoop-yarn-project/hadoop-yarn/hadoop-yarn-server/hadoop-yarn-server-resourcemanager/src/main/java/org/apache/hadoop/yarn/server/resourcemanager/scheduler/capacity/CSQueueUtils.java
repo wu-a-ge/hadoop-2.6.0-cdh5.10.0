@@ -79,7 +79,7 @@ class CSQueueUtils {
   
   public static Map<String, Float> computeAbsoluteCapacityByNodeLabels(
       Map<String, Float> nodeLabelToCapacities, CSQueue parent) {
-    if (parent == null) {
+    if (parent == null) { //针对root，每一个标签1.0f
       return nodeLabelToCapacities;
     }
     
@@ -96,7 +96,7 @@ class CSQueueUtils {
   
   public static Map<String, Float> computeAbsoluteMaxCapacityByNodeLabels(
       Map<String, Float> maximumNodeLabelToCapacities, CSQueue parent) {
-    if (parent == null) {
+    if (parent == null) {  //针对root，每一个标签1.0f或0，可以不配置
       return maximumNodeLabelToCapacities;
     }
     Map<String, Float> absoluteMaxCapacityByNodeLabels =
@@ -171,7 +171,14 @@ class CSQueueUtils {
             )
         );
    }
-
+  /**
+   * 减去兄弟队列使用的容量剩余的就是当前队列的可用容量
+   * @author fulaihua 2018年6月20日 下午4:48:07
+   * @param resourceCalculator
+   * @param clusterResource
+   * @param queue
+   * @return
+   */
    public static float getAbsoluteMaxAvailCapacity(
       ResourceCalculator resourceCalculator, Resource clusterResource, CSQueue queue) {
       CSQueue parent = queue.getParent();

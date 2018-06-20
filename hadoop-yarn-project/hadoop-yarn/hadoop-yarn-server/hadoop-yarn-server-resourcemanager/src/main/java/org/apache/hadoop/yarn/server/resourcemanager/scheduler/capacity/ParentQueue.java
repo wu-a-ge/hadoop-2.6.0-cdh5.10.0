@@ -428,7 +428,7 @@ public class ParentQueue extends AbstractCSQueue {
         labelManager.getLabelsOnNode(node.getNodeID()))) {
       return assignment;
     }
-    //循环分配容器，根队列才有这个权限
+    //如果节点的资源充足，循环向此节点分配任务，根队列才有这个权限
     while (canAssign(clusterResource, node)) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Trying to assign containers to child-queue of "
@@ -498,7 +498,13 @@ public class ParentQueue extends AbstractCSQueue {
     
     return assignment;
   }
-
+ /**
+  * 判断当前队列使用资源是否达到最大容量上限
+  * @author fulaihua 2018年6月20日 下午3:38:05
+  * @param clusterResource
+  * @param nodeLabels
+  * @return
+  */
   private synchronized boolean canAssignToThisQueue(Resource clusterResource,
       Set<String> nodeLabels) {
     Set<String> labelCanAccess =

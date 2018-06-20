@@ -348,7 +348,12 @@ public class CapacitySchedulerConfiguration extends Configuration {
     LOG.debug("CSConf - setCapacity: queuePrefix=" + getQueuePrefix(queue) + 
         ", capacity=" + capacity);
   }
-
+  /**
+   * 队列的最大容量都是100
+   * @author fulaihua 2018年6月20日 下午4:04:32
+   * @param queue
+   * @return
+   */
   public float getMaximumCapacity(String queue) {
     float maxCapacity = getFloat(getQueuePrefix(queue) + MAXIMUM_CAPACITY,
         MAXIMUM_CAPACITY_VALUE);
@@ -452,7 +457,14 @@ public class CapacitySchedulerConfiguration extends Configuration {
     }
     return Collections.unmodifiableSet(set);
   }
-  
+  /**
+   * 每个队列标签的容量必须指定，且ROOT队列每个标签都必须指定为100
+   * @author fulaihua 2018年6月20日 下午4:02:38
+   * @param queue
+   * @param labels
+   * @param mgr
+   * @return
+   */
   public Map<String, Float> getNodeLabelCapacities(String queue,
       Set<String> labels, RMNodeLabelsManager mgr) {
     Map<String, Float> nodeLabelCapacities = new HashMap<String, Float>();
@@ -475,12 +487,18 @@ public class CapacitySchedulerConfiguration extends Configuration {
         LOG.debug("CSConf - getCapacityOfLabel: prefix="
             + getNodeLabelPrefix(queue, label) + ", capacity=" + capacity);
       }
-      //root也没有给100值，而是统一的0，那么需要在配置文件中强制指定!
       nodeLabelCapacities.put(label, capacity / 100f);
     }
     return nodeLabelCapacities;
   }
-  
+  /**
+   * 标签最大容量不需要指定，默认都是100
+   * @author fulaihua 2018年6月20日 下午4:02:12
+   * @param queue
+   * @param labels
+   * @param mgr
+   * @return
+   */
   public Map<String, Float> getMaximumNodeLabelCapacities(String queue,
       Set<String> labels, RMNodeLabelsManager mgr) {
     Map<String, Float> maximumNodeLabelCapacities = new HashMap<String, Float>();

@@ -770,7 +770,7 @@ public class LeafQueue extends AbstractCSQueue {
         // Schedule in priority order
         //按优先级选取资源请求进行调度
         for (Priority priority : application.getPriorities()) {
-          //同一个优先级和容量会按多主机（-local），多机架(rack-local)及off-switch会分别封装多个资源请求（一个资源请求会封装多个出来），以便调度器能从多维度选择调度
+          //同一个优先级和容量会按多主机（data-local），多机架(rack-local)及off-switch会分别封装多个资源请求（一个资源请求会封装多个出来），以便调度器能从多维度选择调度
           //从这里的条件判断，data-local和rack-local不一定有相应的资源请求（reduce就没有data-local），但是off-switch资源请求是必须要存在的，不然可能无法调度！
           //所以这里使用ANY资源名获取资源来验证资源可调度性
           ResourceRequest anyRequest =
@@ -794,7 +794,7 @@ public class LeafQueue extends AbstractCSQueue {
               continue;
             }
           }
-          
+          //标签表达式虽然可以用&&分隔，但是计算资源时只取第一个，没意义
           Set<String> requestedNodeLabels =
               getRequestLabelSetByExpression(anyRequest
                   .getNodeLabelExpression());
@@ -927,7 +927,16 @@ public class LeafQueue extends AbstractCSQueue {
         );
     return headroom;
   }
-
+  /**
+   * 判断当前队列的标签容量使用情况，无标签只是一种特殊情况
+   * @author fulaihua 2018年6月20日 下午5:16:54
+   * @param clusterResource
+   * @param required
+   * @param nodeLabels
+   * @param application
+   * @param checkReservations
+   * @return
+   */
   synchronized boolean canAssignToThisQueue(Resource clusterResource,
       Resource required, Set<String> nodeLabels, FiCaSchedulerApp application, 
       boolean checkReservations) {
@@ -1029,7 +1038,7 @@ public class LeafQueue extends AbstractCSQueue {
     //capacity
     float absoluteMaxAvailCapacity = CSQueueUtils.getAbsoluteMaxAvailCapacity(
       resourceCalculator, clusterResource, this);
-
+    //通过集群资源*最大可用容量得到当前队列最大可用容量
     Resource queueMaxCap =                        // Queue Max-Capacity
         Resources.multiplyAndNormalizeDown(
             resourceCalculator, 
@@ -1421,7 +1430,16 @@ public class LeafQueue extends AbstractCSQueue {
     
     return Resources.none();
   }
-
+  /**
+   * 判断调度机会，针对非本地调度，如果跳过的次数超过节点数那么也会调度，否则再等等
+   * @author fulaihua 2018年6月20日 下午9:56:02
+   * @param application
+   * @param priority
+   * @param node
+   * @param type
+   * @param reservedContainer
+   * @return
+   */
   boolean canAssign(FiCaSchedulerApp application, Priority priority, 
       FiCaSchedulerNode node, NodeType type, RMContainer reservedContainer) {
 

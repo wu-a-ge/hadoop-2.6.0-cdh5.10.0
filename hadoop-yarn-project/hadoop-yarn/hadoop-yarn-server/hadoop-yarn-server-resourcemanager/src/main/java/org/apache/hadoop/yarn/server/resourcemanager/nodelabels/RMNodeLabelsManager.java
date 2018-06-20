@@ -174,10 +174,10 @@ public class RMNodeLabelsManager extends CommonNodeLabelsManager {
   public void activateNode(NodeId nodeId, Resource resource) {
     try {
       writeLock.lock();
-      
+      //NODE是第一次加入，此时还没有在集合中,还有一种情况是NM重启会重新注册，这时集合中已经存在了!
       // save if we have a node before
       Map<String, Host> before = cloneNodeMap(ImmutableSet.of(nodeId));
-      
+      //不存在添加进集合中
       createHostIfNonExisted(nodeId.getHost());
       try {
         createNodeIfNonExisted(nodeId);
@@ -240,19 +240,20 @@ public class RMNodeLabelsManager extends CommonNodeLabelsManager {
         String queue = entry.getKey();
         Queue q = new Queue();
         this.queueCollections.put(queue, q);
-
+        //如果队列可访问标签是*,那么Queue资源和可访问标签都是缺省值，即空集合和无值
         Set<String> labels = entry.getValue();
         if (labels.contains(ANY)) {
           continue;
         }
-
+        //所有可访问节点的资源直接累加,表示队列在打了标签的节点可获得的总资源
+        //RM启动时NM还没有注册进来,那么Queue资源就没有值
         q.acccessibleNodeLabels.addAll(labels);
         for (Host host : nodeCollections.values()) {
           for (Entry<NodeId, Node> nentry : host.nms.entrySet()) {
             NodeId nodeId = nentry.getKey();
             Node nm = nentry.getValue();
             if (nm.running && isNodeUsableByQueue(getLabelsByNode(nodeId), q)) {
-              Resources.addTo(q.resource, nm.resource);//队列在所有打了标签节点的资源直接累加
+              Resources.addTo(q.resource, nm.resource);
             }
           }
         }
@@ -381,7 +382,7 @@ public class RMNodeLabelsManager extends CommonNodeLabelsManager {
           // update labels
           Label label = labelCollections.get(NO_LABEL);
           Resources.addTo(label.resource, newNM.resource);
-
+          //节点没有标签，所有队列都可以分配，所以都会加上资源量
           // update queues, all queue can access this node
           for (Queue q : queueCollections.values()) {
             Resources.addTo(q.resource, newNM.resource);

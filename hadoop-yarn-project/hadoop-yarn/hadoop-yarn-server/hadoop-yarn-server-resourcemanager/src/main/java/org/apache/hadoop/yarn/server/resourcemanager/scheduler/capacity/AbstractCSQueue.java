@@ -119,12 +119,10 @@ public abstract class AbstractCSQueue implements CSQueue {
         && this.accessibleLabels.containsAll(parent.getAccessibleNodeLabels())) {
       this.defaultLabelExpression = parent.getDefaultNodeLabelExpression();
     }
-    //root 肯定是0
     // set capacity by labels
     capacitiyByNodeLabels =
         cs.getConfiguration().getNodeLabelCapacities(getQueuePath(), accessibleLabels,
             labelManager);
-    //root 肯定是0
     // set maximum capacity by labels
     maxCapacityByNodeLabels =
         cs.getConfiguration().getMaximumNodeLabelCapacities(getQueuePath(),
@@ -370,7 +368,13 @@ public abstract class AbstractCSQueue implements CSQueue {
   public Resource getMinimumAllocation() {
     return minimumAllocation;
   }
-  
+  /**
+   * 记录队列在每个标签下已经分配的资源
+   * @author fulaihua 2018年6月20日 下午4:17:44
+   * @param clusterResource
+   * @param resource
+   * @param nodeLabels
+   */
   synchronized void allocateResource(Resource clusterResource, 
       Resource resource, Set<String> nodeLabels) {
     Resources.addTo(usedResources, resource);
@@ -461,7 +465,6 @@ public abstract class AbstractCSQueue implements CSQueue {
     if (StringUtils.equals(label, RMNodeLabelsManager.NO_LABEL)) {
       return getAbsoluteMaximumCapacity();
     }
-    
     if (!absoluteMaxCapacityByNodeLabels.containsKey(label)) {
       return 0f;
     } else {
