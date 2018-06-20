@@ -160,7 +160,7 @@ public class ParentQueue extends AbstractCSQueue {
   private static float PRECISION = 0.0005f; // 0.05% precision
   void setChildQueues(Collection<CSQueue> childQueues) {
     // Validate
-	 //所有子队列的容量加上应该是100
+	 //所有子队列的容量加上应该是100,root 默认100.0f
     float childCapacities = 0;
     for (CSQueue queue : childQueues) {
       childCapacities += queue.getCapacity();

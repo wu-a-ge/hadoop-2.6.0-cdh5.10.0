@@ -326,7 +326,12 @@ public class CapacitySchedulerConfiguration extends Configuration {
     return getFloat(getQueuePrefix(queue) + MAXIMUM_AM_RESOURCE_SUFFIX, 
     		getMaximumApplicationMasterResourcePercent());
   }
-  
+  /**
+   * root 队列100.0，不需要配置
+   * @author fulaihua 2018年6月20日 下午10:19:39
+   * @param queue
+   * @return
+   */
   public float getCapacity(String queue) {
     float capacity = queue.equals("root") ? 100.0f : getFloat(
         getQueuePrefix(queue) + CAPACITY, UNDEFINED);
