@@ -172,7 +172,7 @@ class CSQueueUtils {
         );
    }
   /**
-   * 减去兄弟队列使用的容量剩余的就是当前队列的可用容量
+   * min(队列最大容量百分比，1.0-兄弟使用容量百分比)*父最大可用容量
    * @author fulaihua 2018年6月20日 下午4:48:07
    * @param resourceCalculator
    * @param clusterResource
@@ -183,7 +183,7 @@ class CSQueueUtils {
       ResourceCalculator resourceCalculator, Resource clusterResource, CSQueue queue) {
       CSQueue parent = queue.getParent();
       if (parent == null) {
-        return queue.getAbsoluteMaximumCapacity();//父队列 直接返回最大绝对百分比
+        return queue.getAbsoluteMaximumCapacity();//root直接返回最大绝对百分比
       }
 
       //Get my parent's max avail, needed to determine my own
@@ -196,6 +196,7 @@ class CSQueueUtils {
       if (Resources.isInvalidDivisor(resourceCalculator, parentResource)) {
         return 0.0f;
       }
+      //减去兄弟队列使用的容量剩余的就是当前队列的可用容量
       //sibling used is parent used - my used...
       float siblingUsedCapacity = Resources.ratio(
                  resourceCalculator,
@@ -204,7 +205,7 @@ class CSQueueUtils {
       //my max avail is the lesser of my max capacity and what is unused from my parent
       //by my siblings (if they are beyond their base capacity)
       float maxAvail = Math.min(
-        queue.getMaximumCapacity(),
+        queue.getMaximumCapacity(),//使用了队列最大容量来计算
         1.0f - siblingUsedCapacity);
       //and, mutiply by parent to get absolute (cluster relative) value
       float absoluteMaxAvail = maxAvail * parentMaxAvail;

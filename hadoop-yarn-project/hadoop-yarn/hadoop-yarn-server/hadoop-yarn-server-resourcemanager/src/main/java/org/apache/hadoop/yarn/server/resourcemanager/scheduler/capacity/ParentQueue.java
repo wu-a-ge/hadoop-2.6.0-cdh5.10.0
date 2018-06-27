@@ -499,7 +499,7 @@ public class ParentQueue extends AbstractCSQueue {
     return assignment;
   }
  /**
-  * 判断当前队列使用资源是否达到最大容量上限
+  * 判断当前队列标签（队列可访问标签与节点标签交集为空就判断空标签）使用资源是否达到最大容量上限
   * @author fulaihua 2018年6月20日 下午3:38:05
   * @param clusterResource
   * @param nodeLabels
@@ -593,7 +593,7 @@ public class ParentQueue extends AbstractCSQueue {
         new CSAssignment(Resources.createResource(0, 0), NodeType.NODE_LOCAL);
     
     printChildQueues();
-
+    //容量使用少的排前面，优先分配!队列之间按使用容量排序！
     // Try to assign to most 'under-served' sub-queue
     for (Iterator<CSQueue> iter=childQueues.iterator(); iter.hasNext();) {
       CSQueue childQueue = iter.next();
@@ -607,7 +607,7 @@ public class ParentQueue extends AbstractCSQueue {
           " stats: " + childQueue + " --> " + 
           assignment.getResource() + ", " + assignment.getType());
       }
-
+      //一旦在某一个队列分配成功，就会退出循环，并对队列重排序
       // If we do assign, remove the queue and re-insert in-order to re-sort
       if (Resources.greaterThan(
               resourceCalculator, cluster, 
@@ -616,7 +616,7 @@ public class ParentQueue extends AbstractCSQueue {
         iter.remove();
         LOG.info("Re-sorting assigned queue: " + childQueue.getQueuePath() + 
             " stats: " + childQueue);
-        childQueues.add(childQueue);//此集合是按队列的容量使用情况排序，容量使用少的排前面，优先分配!
+        childQueues.add(childQueue);
         if (LOG.isDebugEnabled()) {
           printChildQueues();
         }

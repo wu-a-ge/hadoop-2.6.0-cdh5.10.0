@@ -750,7 +750,7 @@ public class LeafQueue extends AbstractCSQueue {
             clusterResource);
       }
     }
-    
+    //子队列内部，所有程序FIFO，按提交顺序排序
     // Try to assign containers to applications in order
     for (FiCaSchedulerApp application : activeApplications) {
       
@@ -928,7 +928,7 @@ public class LeafQueue extends AbstractCSQueue {
     return headroom;
   }
   /**
-   * 判断当前队列的标签容量使用情况，无标签只是一种特殊情况
+   * 判断当前队列的标签容量使用情况
    * @author fulaihua 2018年6月20日 下午5:16:54
    * @param clusterResource
    * @param required
@@ -1038,7 +1038,7 @@ public class LeafQueue extends AbstractCSQueue {
     //capacity
     float absoluteMaxAvailCapacity = CSQueueUtils.getAbsoluteMaxAvailCapacity(
       resourceCalculator, clusterResource, this);
-    //通过集群资源*最大可用容量得到当前队列最大可用容量
+    //(集群资源*算出来的绝对最大可用容量)=当前队列最大可用容量
     Resource queueMaxCap =                        // Queue Max-Capacity
         Resources.multiplyAndNormalizeDown(
             resourceCalculator, 
@@ -1105,14 +1105,14 @@ public class LeafQueue extends AbstractCSQueue {
                 .getResourceByLabel(CommonNodeLabelsManager.NO_LABEL, clusterResource),
               absoluteCapacity, minimumAllocation);
     }
-
+    //请求资源可能超过队列容量
     // Allow progress for queues with miniscule capacity
     queueCapacity =
         Resources.max(
             resourceCalculator, clusterResource, 
             queueCapacity, 
             required);
-
+    //可能使用资源超过队列容量，这是允许的！
     Resource currentCapacity =
         Resources.lessThan(resourceCalculator, clusterResource, 
             usedResources, queueCapacity) ?
@@ -1133,7 +1133,7 @@ public class LeafQueue extends AbstractCSQueue {
                 Resources.max(
                     resourceCalculator, clusterResource, 
                     Resources.divideAndCeil(
-                        resourceCalculator, currentCapacity, activeUsers),//每个用户平均资源
+                        resourceCalculator, currentCapacity, activeUsers),//每个用户平均资源,用户少单个用户可以用完整个资源
                     Resources.divideAndCeil(
                         resourceCalculator, 
                         Resources.multiplyAndRoundDown(
@@ -1141,7 +1141,7 @@ public class LeafQueue extends AbstractCSQueue {
                         100)//每个用户百分比资源
                     ), //取两者的最大值
                 Resources.multiplyAndRoundDown(queueCapacity, userLimitFactor)
-                ), //为什么这里取最小呢？队列容量*factor，表示此用户可以使用超过队列的容量多少，factor为1，肯定不能超过！
+                ), //TODO:为什么这里取最小呢?用户无法使用资源大于队列容量了？？队列容量*factor，表示此用户可以使用超过队列的容量多少！
             minimumAllocation);
 
     if (LOG.isDebugEnabled()) {
