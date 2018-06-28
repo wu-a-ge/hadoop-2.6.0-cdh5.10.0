@@ -1866,7 +1866,12 @@ public class LeafQueue extends AbstractCSQueue {
         --pendingApplications;
       }
     }
-
+    /***
+     * 记录用户使用的总资源和用户在每个标签下使用的资源
+     * @author fulaihua 2018年6月27日 下午9:41:32
+     * @param resource
+     * @param nodeLabels
+     */
     public synchronized void assignContainer(Resource resource,
         Set<String> nodeLabels) {
       Resources.addTo(consumed, resource);

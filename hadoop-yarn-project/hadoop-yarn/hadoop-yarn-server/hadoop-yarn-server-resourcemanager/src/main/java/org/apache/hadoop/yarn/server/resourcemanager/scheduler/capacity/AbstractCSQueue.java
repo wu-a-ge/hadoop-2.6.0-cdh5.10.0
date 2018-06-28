@@ -369,7 +369,7 @@ public abstract class AbstractCSQueue implements CSQueue {
     return minimumAllocation;
   }
   /**
-   * 记录队列在每个标签下已经分配的资源和总共分配的资源
+   * 记录队列在每个标签下已经使用的资源和总共使用的资源
    * @author fulaihua 2018年6月20日 下午4:17:44
    * @param clusterResource
    * @param resource
