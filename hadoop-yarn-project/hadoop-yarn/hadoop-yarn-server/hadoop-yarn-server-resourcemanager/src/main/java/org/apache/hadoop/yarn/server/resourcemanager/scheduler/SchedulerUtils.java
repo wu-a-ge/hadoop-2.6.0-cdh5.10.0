@@ -279,7 +279,13 @@ public class SchedulerUtils {
       }
     }
   }
-  
+  /**
+   * 如果节点没有标签，那么任何一个队列都可以往此节点分配容器，否则就要比如队列标签和节点标签是否有交集
+   * @author fulaihua 2018年6月28日 上午11:05:36
+   * @param queueLabels
+   * @param nodeLabels
+   * @return
+   */
   public static boolean checkQueueAccessToNode(Set<String> queueLabels,
       Set<String> nodeLabels) {
     // if queue's label is *, it can access any node
@@ -318,7 +324,14 @@ public class SchedulerUtils {
       }
     }
   }
-  
+  /**
+   * 资源请求标签表达式（一般就是队列标签表达式）为空，只能分配到没有标签的节点
+   * 有标签表达式的资源请求，可以分配到有标签的和没有标签的节点
+   * @author fulaihua 2018年6月28日 上午11:07:07
+   * @param nodeLabels
+   * @param labelExpression
+   * @return
+   */
   public static boolean checkNodeLabelExpression(Set<String> nodeLabels,
       String labelExpression) {
     // empty label expression can only allocate on node with empty labels

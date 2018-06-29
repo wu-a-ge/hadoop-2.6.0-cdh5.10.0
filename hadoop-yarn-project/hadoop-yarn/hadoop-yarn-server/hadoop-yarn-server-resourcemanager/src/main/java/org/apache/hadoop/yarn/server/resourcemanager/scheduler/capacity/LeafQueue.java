@@ -928,7 +928,7 @@ public class LeafQueue extends AbstractCSQueue {
     return headroom;
   }
   /**
-   * 判断当前队列的标签容量使用情况
+   * 判断当前队列的标签使用容量是否超过标签容量最大值，无标签则判断是否超过队列的最大容量
    * @author fulaihua 2018年6月20日 下午5:16:54
    * @param clusterResource
    * @param required
@@ -949,7 +949,7 @@ public class LeafQueue extends AbstractCSQueue {
     } else {
       labelCanAccess = new HashSet<String>(Sets.intersection(accessibleLabels, nodeLabels));
     }
-    
+    //如果队列有多个标签在节点上，把当前申请的资源全部标签都加一遍！！！目的自然而明
     boolean canAssign = true;
     for (String label : labelCanAccess) {
       if (!usedResourcesByNodeLabels.containsKey(label)) {
@@ -1086,7 +1086,7 @@ public class LeafQueue extends AbstractCSQueue {
     if (requestedLabels != null && !requestedLabels.isEmpty()) {
       // if we have multiple labels to request, we will choose to use the first
       // label
-      //如果有标签，队列容量只计算打了指定标签的所有机器
+      //如果有标签，队列容量只计算打了指定标签的所有机器，判断队列和用户使用的资源情况也是相应的用标签使用量和标签最大量来判断
       String firstLabel = requestedLabels.iterator().next();
       queueCapacity =
           Resources
@@ -1097,7 +1097,7 @@ public class LeafQueue extends AbstractCSQueue {
                       getAbsoluteCapacityByNodeLabel(firstLabel),
                       minimumAllocation));
     } else {
-      //没有标签，算的是没有打标签的所有机器
+      //没有标签，算的是没有打标签的所有机器,，判断队列和用户使用的资源情况也是相应的用无标签的使用量和无标签最大量来判断
       // else there's no label on request, just to use absolute capacity as
       // capacity for nodes without label
       queueCapacity =
@@ -1113,6 +1113,7 @@ public class LeafQueue extends AbstractCSQueue {
             queueCapacity, 
             required);
     //可能使用资源超过队列容量，这是允许的！
+    //假如
     Resource currentCapacity =
         Resources.lessThan(resourceCalculator, clusterResource, 
             usedResources, queueCapacity) ?
@@ -1163,7 +1164,17 @@ public class LeafQueue extends AbstractCSQueue {
 
     return limit;
   }
-  
+  /**
+   * 判断用户使用的资源是否超过用户限制it，如果有标签就取第一次标签，否则使用空标签
+   * @author fulaihua 2018年6月28日 下午2:06:45
+   * @param clusterResource
+   * @param userName
+   * @param limit
+   * @param application
+   * @param checkReservations
+   * @param requestLabels
+   * @return 
+   */
   @Private
   protected synchronized boolean assignToUser(Resource clusterResource,
       String userName, Resource limit, FiCaSchedulerApp application,
