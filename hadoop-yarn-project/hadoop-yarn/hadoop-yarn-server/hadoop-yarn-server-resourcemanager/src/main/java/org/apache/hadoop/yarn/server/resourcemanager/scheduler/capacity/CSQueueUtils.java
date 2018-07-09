@@ -79,7 +79,7 @@ class CSQueueUtils {
   
   public static Map<String, Float> computeAbsoluteCapacityByNodeLabels(
       Map<String, Float> nodeLabelToCapacities, CSQueue parent) {
-    if (parent == null) { //针对root，每一个标签1.0f
+    if (parent == null) { 
       return nodeLabelToCapacities;
     }
     
@@ -96,7 +96,7 @@ class CSQueueUtils {
   
   public static Map<String, Float> computeAbsoluteMaxCapacityByNodeLabels(
       Map<String, Float> maximumNodeLabelToCapacities, CSQueue parent) {
-    if (parent == null) {  //针对root，每一个标签1.0f
+    if (parent == null) {  
       return maximumNodeLabelToCapacities;
     }
     Map<String, Float> absoluteMaxCapacityByNodeLabels =

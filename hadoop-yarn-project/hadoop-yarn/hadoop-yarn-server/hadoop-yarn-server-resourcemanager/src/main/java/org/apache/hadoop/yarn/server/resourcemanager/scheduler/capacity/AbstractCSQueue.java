@@ -51,10 +51,21 @@ public abstract class AbstractCSQueue implements CSQueue {
   
   CSQueue parent;
   final String queueName;
-  
+  /**
+   * root 容量100
+   */
   float capacity;
+  /**
+   * 所有队列默认最大容量都是100
+   */
   float maximumCapacity;
+  /**
+   * root 绝对容量100
+   */
   float absoluteCapacity;
+  /**
+   *所有队列默认最大绝对容量都是100
+   */
   float absoluteMaxCapacity;
   float absoluteUsedCapacity = 0.0f;
 
@@ -72,10 +83,22 @@ public abstract class AbstractCSQueue implements CSQueue {
   RMNodeLabelsManager labelManager;
   String defaultLabelExpression;
   Resource usedResources = Resources.createResource(0, 0);
+  /**
+   * parent.getAbsoluteCapacityByNodeLabels(label)*queue.label_capacity
+   */
   Map<String, Float> absoluteCapacityByNodeLabels;
+  /**
+   * 每个队列标签的容量必须指定，且ROOT队列每个标签都必须指定为100，否则全是0
+   */
   Map<String, Float> capacitiyByNodeLabels;
   Map<String, Resource> usedResourcesByNodeLabels = new HashMap<String, Resource>();
+  /**
+   * 每个队列标签的最大绝对容量默认都是100
+   */
   Map<String, Float> absoluteMaxCapacityByNodeLabels;
+  /**
+   * 每个队列标签的最大容量默认都是100
+   */
   Map<String, Float> maxCapacityByNodeLabels;
   
   Map<AccessType, AccessControlList> acls = 
