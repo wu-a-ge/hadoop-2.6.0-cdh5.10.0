@@ -388,7 +388,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
   }
   /**
    * 为了调度器通过DATA-LOCAL，RACK-LOCAL，OFF-SWITCH三种方式获取到资源请求，
-   * Off-switch这种资源请求必须要存在，它是在其它两种资源无法调度时的最差调度，可能理解为随机
+   * Off-switch这种资源请求必须要存在，它是在其它两种资源无法调度时的最差调度，可理解为随机
    * @author fulaihua 2018年1月25日 下午3:57:34
    * @param req
    */
@@ -448,7 +448,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
       remoteRequest.setNumContainers(0);
       reqMap.put(capability, remoteRequest);
     }
-    //TODO:同一资源名的同一资源大小，只更新了容器数量？不断的在添加进ask,就是数量在增加
+    //同一资源名的同一资源大小，表示一个资源请求，可能需要多个容器，表示多个重复的，比如MAP或REDCUE完全可能
     remoteRequest.setNumContainers(remoteRequest.getNumContainers() + 1);
 
     // Note this down for next interaction with ResourceManager

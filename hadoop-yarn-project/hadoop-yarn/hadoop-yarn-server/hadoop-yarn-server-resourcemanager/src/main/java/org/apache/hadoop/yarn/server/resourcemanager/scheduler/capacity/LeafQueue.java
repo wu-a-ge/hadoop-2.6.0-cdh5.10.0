@@ -724,7 +724,7 @@ public class LeafQueue extends AbstractCSQueue {
     }
     return labels;
   }
-  
+
   @Override
   public synchronized CSAssignment assignContainers(Resource clusterResource,
       FiCaSchedulerNode node, boolean needToUnreserve) {
@@ -750,6 +750,8 @@ public class LeafQueue extends AbstractCSQueue {
             clusterResource);
       }
     }
+    
+    //如果某个APP申请到资源就退出此方法，否则继续循环直到有APP可分配或全部不可分配
     //子队列内部，所有程序FIFO，按提交顺序排序
     // Try to assign containers to applications in order
     for (FiCaSchedulerApp application : activeApplications) {
@@ -770,7 +772,8 @@ public class LeafQueue extends AbstractCSQueue {
         // Schedule in priority order
         //按优先级选取资源请求进行调度
         for (Priority priority : application.getPriorities()) {
-          //同一个优先级和容量会按多主机（data-local），多机架(rack-local)及off-switch会分别封装多个资源请求（一个资源请求会封装多个出来），以便调度器能从多维度选择调度
+          //同一个优先级和容量会按主机名（data-local），机架名(rack-local)及off-switch（*名）会分别封装多个资源请求（一个资源请求会封装多个出来,是由AppMaster封装并提交上来的，参考RMContainerRequestor.addContainerReq方法）
+          //以便调度器能从多维度选择调度
           //从这里的条件判断，data-local和rack-local不一定有相应的资源请求（reduce就没有data-local），但是off-switch资源请求是必须要存在的，不然可能无法调度！
           //所以这里使用ANY资源名获取资源来验证资源可调度性
           ResourceRequest anyRequest =
