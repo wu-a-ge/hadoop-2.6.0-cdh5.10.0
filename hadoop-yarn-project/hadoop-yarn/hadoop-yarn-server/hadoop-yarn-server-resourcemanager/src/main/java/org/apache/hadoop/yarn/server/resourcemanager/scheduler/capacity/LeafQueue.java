@@ -772,7 +772,7 @@ public class LeafQueue extends AbstractCSQueue {
         // Schedule in priority order
         //按优先级选取资源请求进行调度
         for (Priority priority : application.getPriorities()) {
-          //同一个优先级和容量会按主机名（data-local），机架名(rack-local)及off-switch（*名）会分别封装多个资源请求（一个资源请求会封装多个出来,是由AppMaster封装并提交上来的，参考RMContainerRequestor.addContainerReq方法）
+          //同一个优先级和容量资源会按主机名（data-local），机架名(rack-local)及off-switch（*表示的任意名名）会分别封装多个资源请求由AppMaster封装并提交上来（参考RMContainerRequestor.addContainerReq方法）
           //以便调度器能从多维度选择调度
           //从这里的条件判断，data-local和rack-local不一定有相应的资源请求（reduce就没有data-local），但是off-switch资源请求是必须要存在的，不然可能无法调度！
           //所以这里使用ANY资源名获取资源来验证资源可调度性
