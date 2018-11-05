@@ -1116,7 +1116,6 @@ public class LeafQueue extends AbstractCSQueue {
             queueCapacity, 
             required);
     //可能使用资源超过队列容量，这是允许的！
-    //假如
     Resource currentCapacity =
         Resources.lessThan(resourceCalculator, clusterResource, 
             usedResources, queueCapacity) ?
@@ -1137,7 +1136,7 @@ public class LeafQueue extends AbstractCSQueue {
                 Resources.max(
                     resourceCalculator, clusterResource, 
                     Resources.divideAndCeil(
-                        resourceCalculator, currentCapacity, activeUsers),//每个用户平均资源,用户少单个用户可以用完整个资源
+                        resourceCalculator, currentCapacity, activeUsers),//每个用户平均资源,单个用户可以用完整个资源
                     Resources.divideAndCeil(
                         resourceCalculator, 
                         Resources.multiplyAndRoundDown(

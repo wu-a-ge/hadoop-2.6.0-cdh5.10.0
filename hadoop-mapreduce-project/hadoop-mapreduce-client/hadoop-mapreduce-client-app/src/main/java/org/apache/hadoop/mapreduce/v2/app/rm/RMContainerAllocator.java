@@ -420,7 +420,7 @@ public class RMContainerAllocator extends RMContainerRequestor
           reduceResourceRequest.getVirtualCores());
       reqEvent.getCapability().setMemory(
           reduceResourceRequest.getMemory());
-
+      //失败的任务优先调用，并且放入泵队列
       if (reqEvent.getEarlierAttemptFailed()) {
         //previously failed reducers are added to the front for fail fast
         pendingReduces.addFirst(new ContainerRequest(reqEvent,
@@ -466,7 +466,7 @@ public class RMContainerAllocator extends RMContainerRequestor
         supportedMaxContainerCapability.getVirtualCores()) {
       mapContainerRequestAccepted = false;
     }
-
+    //MAP任务直接放入scheduledRequests队列，表示立即调度
     if(mapContainerRequestAccepted) {
       // set the resources
       //都用的第一个任务资源来设置后面的任务资源
@@ -602,7 +602,7 @@ public class RMContainerAllocator extends RMContainerRequestor
     long currTime = clock.getTime();
     for (ContainerRequest request: requestMap.values()) {
       long delay = currTime - request.requestTimeMs;
-      if (delay > allocationDelayThresholdMs)
+      if (delay > allocationDelayThresholdMs) //MAP任务的请求时间超过了最长等待时间，需要抢占一个REDUCE
         hangingRequests++;
     }
     return hangingRequests;
@@ -1064,7 +1064,7 @@ public class RMContainerAllocator extends RMContainerRequestor
       reduces.put(req.attemptID, req);
       addContainerReq(req);
     }
-    
+
     // this method will change the list of allocatedContainers.
     private void assign(List<Container> allocatedContainers) {
       Iterator<Container> it = allocatedContainers.iterator();
@@ -1407,7 +1407,7 @@ public class RMContainerAllocator extends RMContainerRequestor
         reduces.put(tId, container);
       }
     }
-
+    
     @SuppressWarnings("unchecked")
     void preemptReduce(int toPreempt) {
       List<TaskAttemptId> reduceList = new ArrayList<TaskAttemptId>
@@ -1422,7 +1422,8 @@ public class RMContainerAllocator extends RMContainerRequestor
               getJob().getTask(o2.getTaskId()).getAttempt(o2).getProgress());
         }
       });
-      
+      //TODO:存在这种情况，reduce没有调度运行，但是MAP也等了很久，下面的逻辑根本不会进入，主要在集群资源紧张的情况。
+      //所以看AM日志，虽然有抢占，但是实际上不会打印下面逻辑的日志
       for (int i = 0; i < toPreempt && reduceList.size() > 0; i++) {
         TaskAttemptId id = reduceList.remove(0);//remove the one on top
         LOG.info("Preempting " + id);
