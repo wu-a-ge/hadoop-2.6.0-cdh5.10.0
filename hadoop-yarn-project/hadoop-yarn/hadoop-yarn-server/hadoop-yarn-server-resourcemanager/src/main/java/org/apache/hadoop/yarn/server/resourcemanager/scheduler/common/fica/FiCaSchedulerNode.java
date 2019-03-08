@@ -36,7 +36,9 @@ public class FiCaSchedulerNode extends SchedulerNode {
   public FiCaSchedulerNode(RMNode node, boolean usePortForNodeName) {
     super(node, usePortForNodeName);
   }
-
+  /**
+   * 每个节点只能保留一个容器，验证新添加的容器所属的APP和NODEID不能有变化。
+   */
   @Override
   public synchronized void reserveResource(
       SchedulerApplicationAttempt application, Priority priority,

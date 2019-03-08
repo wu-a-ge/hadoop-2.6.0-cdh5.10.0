@@ -387,14 +387,14 @@ public abstract class RMContainerRequestor extends RMCommunicator {
     return availableResources == null ? Resources.none() : availableResources;
   }
   /**
-   * 为了调度器通过DATA-LOCAL，RACK-LOCAL，OFF-SWITCH三种方式获取到资源请求，
+   * 为了调度器通过DATA-LOCAL，RACK-LOCAL，OFF-SWITCH三种资源名方式获取到资源请求，
    * Off-switch这种资源请求必须要存在，它是在其它两种资源无法调度时的最差调度，可理解为随机
    * @author fulaihua 2018年1月25日 下午3:57:34
    * @param req
    */
   protected void addContainerReq(ContainerRequest req) {
     // Create resource requests
-    for (String host : req.hosts) {
+    for (String host : req.hosts) {//hosts可能多个呀，比如资源文件分布在多个主机上,表示可以调度到这些机器上
       // Data-local
       if (!isNodeBlacklisted(host)) {
         addResourceRequest(req.priority, host, req.capability);
@@ -448,7 +448,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
       remoteRequest.setNumContainers(0);
       reqMap.put(capability, remoteRequest);
     }
-    //同一资源名的同一资源大小，表示一个资源请求，可能需要多个容器，表示多个重复的，比如MAP或REDCUE完全可能
+    //用资源名(主机名,机架名,*)和资源容量来表示一个资源请求，且可能需要多个容器，比如MAP或REDCUE
     remoteRequest.setNumContainers(remoteRequest.getNumContainers() + 1);
 
     // Note this down for next interaction with ResourceManager

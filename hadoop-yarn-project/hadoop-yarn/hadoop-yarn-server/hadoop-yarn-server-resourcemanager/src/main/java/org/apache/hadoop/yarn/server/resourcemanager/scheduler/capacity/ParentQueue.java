@@ -575,7 +575,7 @@ public class ParentQueue extends AbstractCSQueue {
    }
 
   /**
-   * 判断当前节点是否有足够的资源
+   * 判断当前节点可获得资源是否大于最小可分配资源
    * @author fulaihua 2018年6月15日 下午4:43:27
    * @param clusterResource
    * @param node

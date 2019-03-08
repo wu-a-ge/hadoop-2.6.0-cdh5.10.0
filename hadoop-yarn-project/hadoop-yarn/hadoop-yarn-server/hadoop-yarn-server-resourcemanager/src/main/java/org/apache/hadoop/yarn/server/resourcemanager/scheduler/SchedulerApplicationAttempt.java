@@ -316,10 +316,10 @@ public class SchedulerApplicationAttempt {
       Resources.addTo(currentReservation, container.getResource());
       
       // Reset the re-reservation count
-      resetReReservations(priority);
+      resetReReservations(priority);//这个节点还没有保留过容器，重置计数
     } else {
       // Note down the re-reservation
-      addReReservation(priority);
+      addReReservation(priority);//相同的节点已经保留过的容器计数
     }
     rmContainer.handle(new RMContainerReservedEvent(container.getId(), 
         container.getResource(), node.getNodeID(), priority));
@@ -330,7 +330,7 @@ public class SchedulerApplicationAttempt {
       reservedContainers = new HashMap<NodeId, RMContainer>();
       this.reservedContainers.put(priority, reservedContainers);
     }
-    reservedContainers.put(node.getNodeID(), rmContainer);
+    reservedContainers.put(node.getNodeID(), rmContainer);//相同优先级下:程序保留容器数大于保留次数
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("Application attempt " + getApplicationAttemptId()

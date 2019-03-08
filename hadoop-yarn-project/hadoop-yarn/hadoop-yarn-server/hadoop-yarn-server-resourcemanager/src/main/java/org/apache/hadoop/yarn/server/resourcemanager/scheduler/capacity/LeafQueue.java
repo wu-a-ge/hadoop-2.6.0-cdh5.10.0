@@ -733,7 +733,8 @@ public class LeafQueue extends AbstractCSQueue {
       LOG.debug("assignContainers: node=" + node.getNodeName()
         + " #applications=" + activeApplications.size());
     }
-    
+    //TODO：此地可以优化，如果不可以往节点上分配容器不应该往后走。也可以在这里解决预留资源标签变化的问题，释放预留资源!
+    //查看SchedulerUtils.checkNodeLabelExpression的调用点
     // if our queue cannot access this node, just return
     if (!SchedulerUtils.checkQueueAccessToNode(accessibleLabels,
         labelManager.getLabelsOnNode(node.getNodeID()))) {
@@ -772,9 +773,10 @@ public class LeafQueue extends AbstractCSQueue {
         // Schedule in priority order
         //按优先级选取资源请求进行调度
         for (Priority priority : application.getPriorities()) {
-          //同一个优先级和容量资源会按主机名（data-local），机架名(rack-local)及off-switch（*表示的任意名名）会分别封装多个资源请求由AppMaster封装并提交上来（参考RMContainerRequestor.addContainerReq方法）
-          //以便调度器能从多维度选择调度
-          //从这里的条件判断，data-local和rack-local不一定有相应的资源请求（reduce就没有data-local），但是off-switch资源请求是必须要存在的，不然可能无法调度！
+          //同等的优先级下,资源名和资源容量大小标识一个资源请求(可能包含多个容器),会同时按主机名（data-local），机架名(rack-local)及off-switch（*表示的任意名）封装三种资源请求由AppMaster提交上来
+         //（参考RMContainerRequestor.addContainerReq方法）以便调度器能从多维度选择调度
+          //data-local和rack-local不一定有相应的资源请求，但是off-switch资源请求是必须要存在的，不然可能无法调度!
+          //Map同时提交data-local,rack-local,off-switch三种资源请求，Reduce只有rack-local,off-switch两种资源请求
           //所以这里使用ANY资源名获取资源来验证资源可调度性
           ResourceRequest anyRequest =
               application.getResourceRequest(priority, ResourceRequest.ANY);
@@ -1167,7 +1169,7 @@ public class LeafQueue extends AbstractCSQueue {
     return limit;
   }
   /**
-   * 判断用户使用的资源是否超过用户限制it，如果有标签就取第一次标签，否则使用空标签
+   * 判断用户使用的资源是否超过用户限制，如果有标签就取第一个标签，否则使用空标签
    * @author fulaihua 2018年6月28日 下午2:06:45
    * @param clusterResource
    * @param userName
@@ -1222,7 +1224,7 @@ public class LeafQueue extends AbstractCSQueue {
     return true;
   }
   /**
-   * 根据当前APP的饥饿程度来调度容器
+   * 根据当前APP的饥饿程度来判断是否需要分配容器
    * @author fulaihua 2018年1月26日 上午11:06:37
    * @param application
    * @param priority
@@ -1231,8 +1233,8 @@ public class LeafQueue extends AbstractCSQueue {
    */
   boolean needContainers(FiCaSchedulerApp application, Priority priority,
       Resource required) {
-    int requiredContainers = application.getTotalRequiredResources(priority);
-    int reservedContainers = application.getNumReservedContainers(priority);
+    int requiredContainers = application.getTotalRequiredResources(priority);//此优先级总共多少容器
+    int reservedContainers = application.getNumReservedContainers(priority);//此优先级保留了多少容器
     int starvation = 0;
     if (reservedContainers > 0) {
       float nodeFactor = 
@@ -1540,7 +1542,7 @@ public class LeafQueue extends AbstractCSQueue {
         + " request=" + request + " type=" + type
         + " needToUnreserve= " + needToUnreserve);
     }
-    
+    //TODO:这里又判断一次，在子队列入口处就应该判断解决的问题放到了这里，可以优化掉！
     // check if the resource request can access the label
     if (!SchedulerUtils.checkNodeLabelExpression(
         labelManager.getLabelsOnNode(node.getNodeID()),
@@ -1548,6 +1550,7 @@ public class LeafQueue extends AbstractCSQueue {
       // this is a reserved container, but we cannot allocate it now according
       // to label not match. This can be caused by node label changed
       // We should un-reserve this container.
+    	//标签变化，必须强制释放资源，不然永远无法调用.
       if (rmContainer != null) {
         unreserve(application, priority, node, rmContainer);
       }
@@ -1596,7 +1599,7 @@ public class LeafQueue extends AbstractCSQueue {
       // Allocate...
 
       // Did we previously reserve containers at this 'priority'?
-      //这是一个保留容器， 有资源可分配，释放保留资源
+      //这是一个保留容器， 有资源可分配，释放保留容器开始分配
       if (rmContainer != null) {
         unreserve(application, priority, node, rmContainer);
       } else if (this.reservationsContinueLooking
@@ -1644,7 +1647,7 @@ public class LeafQueue extends AbstractCSQueue {
     } else {
       // if we are allowed to allocate but this node doesn't have space, reserve it or
       // if this was an already a reserved container, reserve it again
-      //资源不足或已经保留的容器，需要保留当前容器
+      //资源不足或已经有保留的容器，需要保留当前容器
       if ((canAllocContainer) || (rmContainer != null)) {
 
         if (reservationsContinueLooking) {
@@ -1653,7 +1656,7 @@ public class LeafQueue extends AbstractCSQueue {
           // those limits in the chance we could unreserve. If we are here
           // we aren't trying to unreserve so we can't allocate
           // anymore due to that parent limit
-          //达到资源上线也不会保留
+          //查看是否达到队列或用户资源上线，如果达到也不会保留容器.
           boolean res = checkLimitsToReserve(clusterResource, application, capability, 
               needToUnreserve);
           if (!res) {
