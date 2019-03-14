@@ -196,7 +196,7 @@ public class TestFairScheduler extends FairSchedulerTestBase {
 
   // TESTS
 
-  @Test(timeout=2000)
+  @Test
   public void testLoadConfigurationOnInitialize() throws IOException {
     conf.setBoolean(FairSchedulerConfiguration.ASSIGN_MULTIPLE, true);
     conf.setInt(FairSchedulerConfiguration.MAX_ASSIGN, 3);
@@ -2120,7 +2120,7 @@ public class TestFairScheduler extends FairSchedulerTestBase {
   public void testConfigureRootQueue() throws Exception {
     conf.set(FairSchedulerConfiguration.ALLOCATION_FILE, ALLOC_FILE);
 
-    PrintWriter out = new PrintWriter(new FileWriter(ALLOC_FILE));
+    /*PrintWriter out = new PrintWriter(new FileWriter(ALLOC_FILE));
     out.println("<?xml version=\"1.0\"?>");
     out.println("<allocations>");
     out.println("<defaultQueueSchedulingPolicy>fair</defaultQueueSchedulingPolicy>");
@@ -2140,7 +2140,7 @@ public class TestFairScheduler extends FairSchedulerTestBase {
     out.println("<defaultMinSharePreemptionTimeout>200</defaultMinSharePreemptionTimeout>");
     out.println("<defaultFairSharePreemptionThreshold>.6</defaultFairSharePreemptionThreshold>");
     out.println("</allocations>");
-    out.close();
+    out.close();*/
 
     scheduler.init(conf);
     scheduler.start();

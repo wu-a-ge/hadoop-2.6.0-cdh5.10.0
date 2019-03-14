@@ -194,7 +194,7 @@ public class QueueManager {
    * element of the list will be the parent closest to the root. The last
    * element added will be the queue to be created. This method returns the
    * deepest parent that does exist.
-   *
+   * <p>返回当前队列的上级队列，从当前队列向上查找，一直找到root队列返回.如果上级队列不是父队列，直接返回NULL</p>
    * @param name the fully qualified name of the queue to create
    * @param newQueueNames the list to which to add non-existent queues
    * @return the deepest existing parent queue
@@ -481,7 +481,10 @@ public class QueueManager {
     }
     return name;
   }
-  
+  /**
+   * 队列的创建和资源的计算基本都在此方法中
+   * @param queueConf
+   */
   public void updateAllocationConfiguration(AllocationConfiguration queueConf) {
     // Create leaf queues and the parent queues in a leaf's ancestry if they do not exist
     synchronized (queues) {

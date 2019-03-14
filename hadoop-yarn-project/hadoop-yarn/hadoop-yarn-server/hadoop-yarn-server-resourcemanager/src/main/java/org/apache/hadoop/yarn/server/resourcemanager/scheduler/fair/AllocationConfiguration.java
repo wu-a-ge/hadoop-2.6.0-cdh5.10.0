@@ -85,7 +85,9 @@ public class AllocationConfiguration {
   private final Map<String, SchedulingPolicy> schedulingPolicies;
   
   private final SchedulingPolicy defaultSchedulingPolicy;
-  
+  /**
+   * 放置策略比CS调度器丰富，CS中只有一个功能就是用户提交APP进来后可以重写它提交申请时指定的队列到其它队列。
+   */
   // Policy for mapping apps to queues
   @VisibleForTesting
   QueuePlacementPolicy placementPolicy;
@@ -93,7 +95,9 @@ public class AllocationConfiguration {
   //Configured queues in the alloc xml
   @VisibleForTesting
   Map<FSQueueType, Set<String>> configuredQueues;
-
+  /**
+   * 不可被其它队列抢占资源的队列集合
+   */
   private final Set<String> nonPreemptableQueues;
 
   public AllocationConfiguration(Map<String, Resource> minQueueResources,

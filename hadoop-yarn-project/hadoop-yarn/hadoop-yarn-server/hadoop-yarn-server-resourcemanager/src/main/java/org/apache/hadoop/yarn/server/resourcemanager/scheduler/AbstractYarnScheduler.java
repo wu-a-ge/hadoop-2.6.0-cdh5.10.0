@@ -606,7 +606,11 @@ public abstract class AbstractYarnScheduler
     throw new YarnException(getClass().getSimpleName()
         + " does not support reservations");
   }
-
+  /**
+   * 根据NM节点动态调整一个容器最大可分配的内存和核资源。而不是只参考配置文件指定值，不可靠。
+   * @param node
+   * @param add
+   */
   protected void updateMaximumAllocation(SchedulerNode node, boolean add) {
     Resource totalResource = node.getTotalResource();
     maxAllocWriteLock.lock();

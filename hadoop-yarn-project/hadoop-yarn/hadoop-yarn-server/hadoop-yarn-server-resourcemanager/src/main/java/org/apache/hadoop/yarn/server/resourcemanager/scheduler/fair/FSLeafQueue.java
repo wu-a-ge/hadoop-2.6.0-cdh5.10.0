@@ -48,9 +48,14 @@ import org.apache.hadoop.yarn.util.resource.Resources;
 public class FSLeafQueue extends FSQueue {
   private static final Log LOG = LogFactory.getLog(
       FSLeafQueue.class.getName());
-
+   /**
+    * 没有超过用户或队列的最大可运行数，表示可调度的APP放入此队列
+    */
   private final List<FSAppAttempt> runnableApps = // apps that are runnable
       new ArrayList<FSAppAttempt>();
+  /**
+   * 超过了用户或队列的最大可运行数，表示不可调度的APP放入此队列
+   */
   private final List<FSAppAttempt> nonRunnableApps =
       new ArrayList<FSAppAttempt>();
   // get a lock with fair distribution for app list updates
@@ -312,7 +317,7 @@ public class FSLeafQueue extends FSQueue {
     Comparator<Schedulable> comparator = policy.getComparator();
     writeLock.lock();
     try {
-      Collections.sort(runnableApps, comparator);
+      Collections.sort(runnableApps, comparator);//APP进行一次排序进行调度
     } finally {
       writeLock.unlock();
     }
@@ -327,7 +332,7 @@ public class FSLeafQueue extends FSQueue {
         }
 
         assigned = sched.assignContainer(node);
-        if (!assigned.equals(Resources.none())) {
+        if (!assigned.equals(Resources.none())) {//某个app分配成功一次就退出
           if (LOG.isDebugEnabled()) {
             LOG.debug("Assigned container in queue:" + getName() + " " +
                 "container:" + assigned);
@@ -489,6 +494,7 @@ public class FSLeafQueue extends FSQueue {
 
     // If FairShare is zero, use min(maxShare, available resource) to compute
     // maxAMResource
+    //获取instantaneous fair share 作为最大资源参考，如果没有FairShare，那么使用配置的MaxShare
     Resource maxResource = Resources.clone(getFairShare());
     if (maxResource.getMemory() == 0) {
       maxResource.setMemory(

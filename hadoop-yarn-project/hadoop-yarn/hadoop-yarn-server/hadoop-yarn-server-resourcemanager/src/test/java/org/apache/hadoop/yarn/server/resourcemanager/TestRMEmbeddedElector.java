@@ -314,9 +314,9 @@ public class TestRMEmbeddedElector extends ClientBaseWithFixes {
                 ServiceFailedException {
               try {
                 callbackCalled.set(true);
-                LOG.info("Callback called. Sleeping now");
+                //LOG.info("Callback called. Sleeping now");
                 Thread.sleep(delayMs);
-                LOG.info("Sleep done");
+                //LOG.info("Sleep done");
               } catch (InterruptedException e) {
                 e.printStackTrace();
               }

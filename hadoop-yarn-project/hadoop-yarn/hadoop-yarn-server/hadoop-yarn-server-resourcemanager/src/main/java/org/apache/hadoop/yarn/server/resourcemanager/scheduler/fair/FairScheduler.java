@@ -188,6 +188,9 @@ public class FairScheduler extends
   private Map<String, Integer> nodesPerRack = new ConcurrentHashMap<>();
 
   protected boolean sizeBasedWeight; // Give larger weights to larger jobs
+  /**
+   * 就是调度不根据心跳来向节点分配容器而是一直持续不断的根据向RM所注册的节点进行调度容器
+   */
   protected boolean continuousSchedulingEnabled; // Continuous Scheduling enabled or not
   protected int continuousSchedulingSleepMs; // Sleep time for each pass in continuous scheduling
   private Comparator<NodeId> nodeAvailableResourceComparator =
@@ -217,7 +220,7 @@ public class FairScheduler extends
   public FairScheduler() {
     super(FairScheduler.class.getName());
     clock = new SystemClock();
-    allocsLoader = new AllocationFileLoaderService();
+    allocsLoader = new AllocationFileLoaderService();//定时更新调度器的队列配置，CS调度器必须手动刷新
     queueMgr = new QueueManager(this);
     maxRunningEnforcer = new MaxRunningAppsEnforcer(this);
   }
@@ -699,7 +702,7 @@ public class FairScheduler extends
           .getCurrentAppAttempt());
     }
     application.setCurrentAppAttempt(attempt);
-
+    //CS超过最大可提交的APP直接拒绝提交.这里是放入队列
     boolean runnable = maxRunningEnforcer.canAppBeRunnable(queue, user);
     queue.addApp(attempt, runnable);
     if (runnable) {
@@ -728,6 +731,7 @@ public class FairScheduler extends
   /**
    * Helper method that attempts to assign the app to a queue. The method is
    * responsible to call the appropriate event-handler if the app is rejected.
+   * 给用户一次重新映射队列的机会，使用放置策略，类似于CS的根据用户名和组进行重映射队列名一样的
    */
   @VisibleForTesting
   FSLeafQueue assignToQueue(RMApp rmApp, String queueName, String user) {
@@ -894,7 +898,7 @@ public class FairScheduler extends
     Resources.addTo(clusterResource, schedulerNode.getTotalResource());
     updateMaximumAllocation(schedulerNode, true);
 
-    triggerUpdate();
+    triggerUpdate();//通过更新线程，重新计算集群和各队列资源
 
     queueMgr.getRootQueue().setSteadyFairShare(clusterResource);
     queueMgr.getRootQueue().recomputeSteadyShares();
@@ -1139,7 +1143,7 @@ public class FairScheduler extends
 
   private boolean shouldContinueAssigning(int containers,
       Resource maxResourcesToAssign, Resource assignedResource) {
-    if (!assignMultiple) {//默认不允许一次心跳分配多个容器，可以考虑开启
+    if (!assignMultiple) {//默认不允许一个节点一次分配多个容器，可以考虑开启
       return false; // assignMultiple is not enabled. Allocate one at a time.
     }
     //默认动态最大分配启用
@@ -1147,7 +1151,7 @@ public class FairScheduler extends
       // Using fitsIn to check if the resources assigned so far are less than
       // or equal to max resources to assign (half of remaining resources).
       // The "equal to" part can lead to allocating one extra container.
-      return Resources.fitsIn(assignedResource, maxResourcesToAssign);//不能超过一半的资源容量
+      return Resources.fitsIn(assignedResource, maxResourcesToAssign);//不能超过节点一半的资源容量
     } else {
       return maxAssign <= 0 || containers < maxAssign;
     }
@@ -1184,7 +1188,7 @@ public class FairScheduler extends
       Resource assignedResource = Resources.clone(Resources.none());
       Resource maxResourcesToAssign =
           Resources.multiply(node.getAvailableResource(), 0.5f);
-      //循环分配，一直分配到不满足shouldContinueAssigning方法的条件
+      //循环尝试分配
       while (node.getReservedContainer() == null) {
         boolean assignedContainer = false;
         Resource assignment = queueMgr.getRootQueue().assignContainer(node);
@@ -1193,7 +1197,7 @@ public class FairScheduler extends
           assignedContainer = true;
           Resources.addTo(assignedResource, assignment);
         }
-        if (!assignedContainer) { break; }
+        if (!assignedContainer) { break; } //分配失败了直接退出，成功了看后面的条件是否可以分配多次
         if (!shouldContinueAssigning(assignedContainers,
             maxResourcesToAssign, assignedResource)) {
           break;
@@ -1375,7 +1379,7 @@ public class FairScheduler extends
       maxAssign = this.conf.getMaxAssign();
       sizeBasedWeight = this.conf.getSizeBasedWeight();
       preemptionInterval = this.conf.getPreemptionInterval();
-      waitTimeBeforeKill = this.conf.getWaitTimeBeforeKill();
+      waitTimeBeforeKill = this.conf.getWaitTimeBeforeKill();//抢占使用的一个等待时间
       usePortForNodeName = this.conf.getUsePortForNodeName();
       reservableNodesRatio = this.conf.getReservableNodes();
 
@@ -1407,7 +1411,7 @@ public class FairScheduler extends
       updateThread = new UpdateThread();
       updateThread.setName("FairSchedulerUpdateThread");
       updateThread.setDaemon(true);
-
+      //TODO：持续调度的缺陷是什么呢？我觉得是无法实时知道NM的状态而造成调度不合理或浪费
       if (continuousSchedulingEnabled) {
         // start continuous scheduling thread
         schedulingThread = new ContinuousSchedulingThread();
@@ -1565,7 +1569,7 @@ public class FairScheduler extends
         allocConf.getConfiguredQueues().get(FSQueueType.LEAF);
     Set<String> configuredParentQueues =
         allocConf.getConfiguredQueues().get(FSQueueType.PARENT);
-
+    //只有配置改变了才需要重新计算队列的指定的最大资源
     for (FSQueue queue : queues) {
       // If the queue is ad hoc and not root, apply the child defaults
       if ((queue.getParent() != null) &&

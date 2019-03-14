@@ -392,7 +392,11 @@ public class CapacityScheduler extends
       Thread.sleep(cs.getAsyncScheduleInterval());
     } catch (InterruptedException e) {}
   }
-  
+  /**
+   * 就是不依赖于节点心跳分配容器，而是RM持续不断向所有节点的分配容器，类似于公平调度器的持续调度
+   * @author Administrator
+   *
+   */
   static class AsyncScheduleThread extends Thread {
 
     private final CapacityScheduler cs;

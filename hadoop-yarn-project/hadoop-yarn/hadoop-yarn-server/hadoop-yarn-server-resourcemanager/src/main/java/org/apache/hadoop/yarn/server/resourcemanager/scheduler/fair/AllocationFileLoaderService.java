@@ -358,9 +358,11 @@ public class AllocationFileLoaderService extends AbstractService {
     // Load placement policy and pass it configured queues
     Configuration conf = getConfig();
     if (placementPolicyElement != null) {
+    	//如果指定了放置策略，yarn.scheduler.fair.user-as-default-queue和
+    	//yarn.scheduler.fair.allow-undeclared-pools参数被忽略。
       newPlacementPolicy = QueuePlacementPolicy.fromXml(placementPolicyElement,
           configuredQueues, conf);
-    } else {
+    } else { //如果配置文件没有显示配置放置策略，使用默认策略
       newPlacementPolicy = QueuePlacementPolicy.fromConfiguration(conf,
           configuredQueues);
     }

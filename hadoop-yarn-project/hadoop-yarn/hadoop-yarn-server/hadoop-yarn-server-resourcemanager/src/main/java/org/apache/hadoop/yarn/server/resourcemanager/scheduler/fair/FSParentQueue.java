@@ -123,7 +123,7 @@ public class FSParentQueue extends FSQueue {
       readLock.unlock();
     }
   }
-
+  
   @Override
   public Resource getDemand() {
     readLock.lock();
@@ -167,6 +167,7 @@ public class FSParentQueue extends FSQueue {
               " now " + demand);
         }
       }
+      
       // Cap demand to maxShare to limit allocation to maxShare
       demand = Resources.componentwiseMin(demand, maxRes);
     } finally {
@@ -220,7 +221,7 @@ public class FSParentQueue extends FSQueue {
     // Hold the write lock when sorting childQueues
     writeLock.lock();
     try {
-      Collections.sort(childQueues, policy.getComparator());//子队列也排序，优先分配哪个队列里面的任务
+      Collections.sort(childQueues, policy.getComparator());//
     } finally {
       writeLock.unlock();
     }
@@ -237,7 +238,7 @@ public class FSParentQueue extends FSQueue {
     try {
       for (FSQueue child : childQueues) {
         assigned = child.assignContainer(node);
-        if (!Resources.equals(assigned, Resources.none())) {
+        if (!Resources.equals(assigned, Resources.none())) { //一旦某个子队列分配成功直接退出
           break;
         }
       }

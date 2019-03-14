@@ -107,12 +107,16 @@ public abstract class FSQueue implements Queue, Schedulable {
   public ResourceWeights getWeights() {
     return scheduler.getAllocationConfiguration().getQueueWeight(getName());
   }
-  
+  /**
+   * 队列可分配的最小资源，至少可分配的资源,调用的getMinResources
+   */
   @Override
   public Resource getMinShare() {
     return scheduler.getAllocationConfiguration().getMinResources(getName());
   }
-  
+  /**
+   * 队列可分配的最大资源,最多可分配的资源，调用的getMaxResources，这个值队列是从配置来的，死的，不会随着集群的总资源大小更新！
+   */
   @Override
   public Resource getMaxShare() {
     return scheduler.getAllocationConfiguration().getMaxResources(getName());
@@ -187,8 +191,9 @@ public abstract class FSQueue implements Queue, Schedulable {
   public FSQueueMetrics getMetrics() {
     return metrics;
   }
-
-  /** Get the fair share assigned to this Schedulable. */
+  
+  /** Get the fair share assigned to this Schedulable. 
+   * <p>TODO：正常分配感觉只有在计算AM资源的时候才用一次！剩下的使用地方就是判断抢占式使用此参数</p>*/
   public Resource getFairShare() {
     return fairShare;
   }
@@ -202,7 +207,9 @@ public abstract class FSQueue implements Queue, Schedulable {
     }
   }
 
-  /** Get the steady fair share assigned to this Schedulable. */
+  /** Get the steady fair share assigned to this Schedulable. 
+   *<p>TODO： 就没有发现有什么用</p>
+   * */
   public Resource getSteadyFairShare() {
     return steadyFairShare;
   }
@@ -298,7 +305,7 @@ public abstract class FSQueue implements Queue, Schedulable {
   
   /**
    * Helper method to check if the queue should attempt assigning resources
-   * 
+   * <p>检查当前队列使用容量是否大于最大可分配的资源或者当前节点是否有保留容器</p>
    * @return true if check passes (can assign) or false otherwise
    */
   protected boolean assignContainerPreCheck(FSSchedulerNode node) {

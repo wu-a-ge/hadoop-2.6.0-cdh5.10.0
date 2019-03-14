@@ -80,18 +80,18 @@ public class FairSharePolicy extends SchedulingPolicy {
       double useToWeightRatio1, useToWeightRatio2;
       double weight1, weight2;
       Resource minShare1 = Resources.min(RESOURCE_CALCULATOR, null,
-          s1.getMinShare(), s1.getDemand());
+          s1.getMinShare(), s1.getDemand());//最小资源和需求资源取小值
       Resource minShare2 = Resources.min(RESOURCE_CALCULATOR, null,
-          s2.getMinShare(), s2.getDemand());
+          s2.getMinShare(), s2.getDemand());//最小资源和需求资源取小值
       boolean s1Needy = Resources.lessThan(RESOURCE_CALCULATOR, null,
-          s1.getResourceUsage(), minShare1);
+          s1.getResourceUsage(), minShare1);//使用量小于最少资源，都为0，反而为false，相当于没有最小保证
       boolean s2Needy = Resources.lessThan(RESOURCE_CALCULATOR, null,
-          s2.getResourceUsage(), minShare2);
+          s2.getResourceUsage(), minShare2);//使用量小于最少资源，都为0，反而为false，相当于没有最小保证
 
       minShareRatio1 = (double) s1.getResourceUsage().getMemory()
-          / Resources.max(RESOURCE_CALCULATOR, null, minShare1, ONE).getMemory();
+          / Resources.max(RESOURCE_CALCULATOR, null, minShare1, ONE).getMemory();//使用量和最少资源的比率
       minShareRatio2 = (double) s2.getResourceUsage().getMemory()
-          / Resources.max(RESOURCE_CALCULATOR, null, minShare2, ONE).getMemory();
+          / Resources.max(RESOURCE_CALCULATOR, null, minShare2, ONE).getMemory();//使用量和最少资源的比率
 
       weight1 = s1.getWeights().getWeight(ResourceType.MEMORY);
       weight2 = s2.getWeights().getWeight(ResourceType.MEMORY);
@@ -113,21 +113,21 @@ public class FairSharePolicy extends SchedulingPolicy {
       }
 
       int res = 0;
-      if (s1Needy && !s2Needy)
+      if (s1Needy && !s2Needy) //资源使用量小于最少资源，那么排在前面
         res = -1;
       else if (s2Needy && !s1Needy)
         res = 1;
       else if (s1Needy && s2Needy)
-        res = (int) Math.signum(minShareRatio1 - minShareRatio2);
+        res = (int) Math.signum(minShareRatio1 - minShareRatio2);//使用资源量都小于最少资源，比较使用量占用比，占比越小排前面
       else
         // Neither schedulable is needy
-        res = (int) Math.signum(useToWeightRatio1 - useToWeightRatio2);
+        res = (int) Math.signum(useToWeightRatio1 - useToWeightRatio2);//比较权重,权重越大，比率越小，排在前面
       if (res == 0) {
         // Apps are tied in fairness ratio. Break the tie by submit time and job
         // name to get a deterministic ordering, which is useful for unit tests.
-        res = (int) Math.signum(s1.getStartTime() - s2.getStartTime());
+        res = (int) Math.signum(s1.getStartTime() - s2.getStartTime());//权限相等比较启动时间
         if (res == 0)
-          res = s1.getName().compareTo(s2.getName());
+          res = s1.getName().compareTo(s2.getName());//时间相等比较名字
       }
       return res;
     }
