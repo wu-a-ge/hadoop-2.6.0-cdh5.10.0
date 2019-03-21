@@ -200,7 +200,7 @@ public class CapacityScheduler extends
 
   private CapacitySchedulerConfiguration conf;
   private Configuration yarnConf;
-
+  /**HASH表中的KEY存放的队列名是简短队列名*/
   private Map<String, CSQueue> queues = new ConcurrentHashMap<String, CSQueue>();
 
   private AtomicInteger numNodeManagers = new AtomicInteger(0);
@@ -614,7 +614,7 @@ public class CapacityScheduler extends
       }
       parentQueue.setChildQueues(childQueues);
     }
-
+    //叶子队列名必须唯一,其实所有队列名必须唯一，因为使用的简短队列名作为HASH的KEY
     if(queue instanceof LeafQueue == true && queues.containsKey(queueName)
       && queues.get(queueName) instanceof LeafQueue == true) {
       throw new IOException("Two leaf queues were named " + queueName

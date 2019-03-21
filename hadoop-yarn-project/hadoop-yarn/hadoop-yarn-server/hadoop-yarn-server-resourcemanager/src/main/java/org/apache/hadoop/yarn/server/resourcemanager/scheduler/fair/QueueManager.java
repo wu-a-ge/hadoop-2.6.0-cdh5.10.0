@@ -59,6 +59,7 @@ public class QueueManager {
 
   private final Collection<FSLeafQueue> leafQueues = 
       new CopyOnWriteArrayList<FSLeafQueue>();
+  /**HASH表中的KEY存储的是队列的完全限定名，所以客户端提交时必须输入完全队列路径名*/
   private final Map<String, FSQueue> queues = new HashMap<String, FSQueue>();
   private FSParentQueue rootQueue;
 
