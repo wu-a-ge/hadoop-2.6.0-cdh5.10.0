@@ -3338,7 +3338,7 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
       clientNode = blockManager.getDatanodeManager().getDatanodeByHost(
           clientMachine);
       replication = pendingFile.getFileReplication();
-      storagePolicyID = pendingFile.getStoragePolicyID();
+      storagePolicyID = pendingFile.getStoragePolicyID();//文件存储策略ID
     } finally {
       readUnlock();
     }
@@ -8240,7 +8240,7 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
     double avgLoad = 0;
     final int nodes = getNumDatanodesInService();
     if (nodes != 0) {
-      final int xceivers = datanodeStatistics.getInServiceXceiverCount();
+      final int xceivers = datanodeStatistics.getInServiceXceiverCount();//总的xceiver数
       avgLoad = (double)xceivers/nodes;
     }
     return avgLoad;

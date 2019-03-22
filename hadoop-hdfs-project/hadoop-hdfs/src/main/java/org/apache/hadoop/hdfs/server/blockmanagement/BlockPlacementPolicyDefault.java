@@ -94,7 +94,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
         DFSConfigKeys.DFS_NAMENODE_TOLERATE_HEARTBEAT_MULTIPLIER_DEFAULT);
     this.staleInterval = conf.getLong(
         DFSConfigKeys.DFS_NAMENODE_STALE_DATANODE_INTERVAL_KEY, 
-        DFSConfigKeys.DFS_NAMENODE_STALE_DATANODE_INTERVAL_DEFAULT);
+        DFSConfigKeys.DFS_NAMENODE_STALE_DATANODE_INTERVAL_DEFAULT);//NN在此时间间隔内没有收到心跳表示陈腐了
     this.preferLocalNode = conf.getBoolean(
         DFSConfigKeys.
             DFS_NAMENODE_BLOCKPLACEMENTPOLICY_DEFAULT_PREFER_LOCAL_NODE_KEY,
@@ -221,7 +221,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
     boolean avoidLocalNode = (addBlockFlags != null
         && addBlockFlags.contains(AddBlockFlag.NO_LOCAL_WRITE)
         && writer != null
-        && !excludedNodes.contains(writer));
+        && !excludedNodes.contains(writer));//也就是不写入客户端所在机器的DN节点
     // Attempt to exclude local node if the client suggests so. If no enough
     // nodes can be obtained, it falls back to the default block placement
     // policy.
@@ -308,7 +308,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
         map.put(type, 1);
       } else {
         int num = map.get(type);
-        map.put(type, num + 1);
+        map.put(type, num + 1);//存储类型计数，后面选中一个节点就会减一，如果此类型选完了就会从集合中移出。
       }
     }
     return map;
@@ -485,7 +485,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
       // otherwise try local machine first
       if (excludedNodes.add(localMachine) // was not in the excluded list
           && isGoodDatanode(localDatanode, maxNodesPerRack, false,
-              results, avoidStaleNodes)) {
+              results, avoidStaleNodes)) { //选择本地节点不考虑负载!
         for (Iterator<Map.Entry<StorageType, Integer>> iter = storageTypes
             .entrySet().iterator(); iter.hasNext(); ) {
           Map.Entry<StorageType, Integer> entry = iter.next();
@@ -825,7 +825,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
     if (considerLoad) {
       final double maxLoad = 2.0 * stats.getInServiceXceiverAverage();
       final int nodeLoad = node.getXceiverCount();
-      if (nodeLoad > maxLoad) {
+      if (nodeLoad > maxLoad) { //如果选取的节点的写线程数大于平均负载的2倍，也不能选择!这个磁盘空间不均衡发生概率很大!
         logNodeIsNotChosen(node, "the node is too busy (load: " + nodeLoad
             + " > " + maxLoad + ") ");
         return false;
@@ -841,7 +841,7 @@ public class BlockPlacementPolicyDefault extends BlockPlacementPolicy {
         counter++;
       }
     }
-    if (counter > maxTargetPerRack) {
+    if (counter > maxTargetPerRack) {//针对单机架不得会发生，多机架有可能!
       logNodeIsNotChosen(node, "the rack has too many chosen nodes ");
       return false;
     }

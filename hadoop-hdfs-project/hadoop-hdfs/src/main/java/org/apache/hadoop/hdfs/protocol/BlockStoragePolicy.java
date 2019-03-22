@@ -80,7 +80,7 @@ public class BlockStoragePolicy {
   public List<StorageType> chooseStorageTypes(final short replication) {
     final List<StorageType> types = new LinkedList<StorageType>();
     int i = 0, j = 0;
-
+    //尽量使用当前策略的每一种存储类型存储一个复本
     // Do not return transient storage types. We will not have accurate
     // usage information for transient types.
     for (;i < replication && j < storageTypes.length; ++j) {
@@ -89,7 +89,7 @@ public class BlockStoragePolicy {
         ++i;
       }
     }
-
+    //存储类型不满足复本总数，使用最后一种存储类型补充满复本数
     final StorageType last = storageTypes[storageTypes.length - 1];
     if (!last.isTransient()) {
       for (; i < replication; i++) {
@@ -135,9 +135,9 @@ public class BlockStoragePolicy {
       final Iterable<StorageType> chosen,
       final EnumSet<StorageType> unavailables,
       final boolean isNewBlock) {
-    final List<StorageType> excess = new LinkedList<StorageType>();
+    final List<StorageType> excess = new LinkedList<StorageType>();//排除了已经选择了节点的存储类型后剩余的类型
     final List<StorageType> storageTypes = chooseStorageTypes(
-        replication, chosen, excess);
+        replication, chosen, excess);//选择所有副本数的存储类型
     final int expectedSize = storageTypes.size() - excess.size();
     final List<StorageType> removed = new LinkedList<StorageType>();
     for(int i = storageTypes.size() - 1; i >= 0; i--) {
