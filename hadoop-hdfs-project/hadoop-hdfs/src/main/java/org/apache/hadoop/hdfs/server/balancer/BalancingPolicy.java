@@ -56,7 +56,7 @@ abstract class BalancingPolicy {
       final long capacity = totalCapacities.get(t);
       if (capacity > 0L) {
         final double avg  = totalUsedSpaces.get(t)*100.0/capacity;
-        avgUtilizations.set(t, avg);
+        avgUtilizations.set(t, avg); //每一个存储类型的平均使用量百分比
       }
     }
   }

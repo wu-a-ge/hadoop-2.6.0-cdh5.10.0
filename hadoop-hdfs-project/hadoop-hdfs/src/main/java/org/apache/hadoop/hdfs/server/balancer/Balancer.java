@@ -333,21 +333,20 @@ public class Balancer {
               + " but it is not specified as a source; skipping it.");
           continue;
         }
-
+        //当前节点的某个存储类型的使用百分比和集群的某个存储类型的使用百分比差值(也即溢出百分比，我定义的)
         final double utilizationDiff = utilization - average;
-        final long capacity = getCapacity(r, t);
-        final double thresholdDiff = Math.abs(utilizationDiff) - threshold;
+        final long capacity = getCapacity(r, t);//当前节点的总容量
+        final double thresholdDiff = Math.abs(utilizationDiff) - threshold;//溢出百分比和阀值差值
         final long maxSize2Move = computeMaxSize2Move(capacity,
             getRemaining(r, t), utilizationDiff, threshold, maxSizeToMove);
-
         final StorageGroup g;
         if (utilizationDiff > 0) {
           final Source s = dn.addSource(t, maxSize2Move, dispatcher);
-          if (thresholdDiff <= 0) { // within threshold
-            aboveAvgUtilized.add(s);
+          if (thresholdDiff <= 0) { //within threshold
+            aboveAvgUtilized.add(s);//这种节点刚好在平均值以上但是没有超过阀值
           } else {
             overLoadedBytes += percentage2bytes(thresholdDiff, capacity);
-            overUtilized.add(s);
+            overUtilized.add(s);//这种节点超过阀值很多，也即负载很重
           }
           g = s;
         } else {
@@ -378,8 +377,8 @@ public class Balancer {
       final double utilizationDiff, final double threshold, final long max) {
     final double diff = Math.min(threshold, Math.abs(utilizationDiff));
     long maxSizeToMove = percentage2bytes(diff, capacity);
-    if (utilizationDiff < 0) {
-      maxSizeToMove = Math.min(remaining, maxSizeToMove);
+    if (utilizationDiff < 0) { //溢出百分比低于集群平均值,一般作为目标节点所能接受的最大字节数
+      maxSizeToMove = Math.min(remaining, maxSizeToMove);//为什么和剩余比较？因为剩余空间只有这么多，你移多了过来要爆
     }
     return Math.min(max, maxSizeToMove);
   }

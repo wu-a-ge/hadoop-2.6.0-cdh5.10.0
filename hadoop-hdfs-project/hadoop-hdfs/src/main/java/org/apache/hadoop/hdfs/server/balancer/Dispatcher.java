@@ -247,7 +247,7 @@ public class Dispatcher {
     private boolean chooseProxySource() {
       final DatanodeInfo targetDN = target.getDatanodeInfo();
       // if source and target are same nodes then no need of proxy
-      if (source.getDatanodeInfo().equals(targetDN) && addTo(source)) {
+      if (source.getDatanodeInfo().equals(targetDN) && addTo(source)) { //可能发生嘛？在判断块的位置时已经排除了呀！
         return true;
       }
       // if node group is supported, first try add nodes in the same node group
@@ -259,13 +259,13 @@ public class Dispatcher {
           }
         }
       }
-      // check if there is replica which is on the same rack with the target
+      // check if there is replica which is on the same rack with the target，如果只有一个机架，一般在这一步就跳出了
       for (StorageGroup loc : block.getLocations()) {
         if (cluster.isOnSameRack(loc.getDatanodeInfo(), targetDN) && addTo(loc)) {
           return true;
         }
       }
-      // find out a non-busy replica
+      // find out a non-busy replica,随机选了
       for (StorageGroup loc : block.getLocations()) {
         if (addTo(loc)) {
           return true;
@@ -277,7 +277,7 @@ public class Dispatcher {
     /** add to a proxy source for specific block movement */
     private boolean addTo(StorageGroup g) {
       final DDatanode dn = g.getDDatanode();
-      if (dn.addPendingBlock(this)) {
+      if (dn.addPendingBlock(this)) { 
         proxySource = dn;
         return true;
       }
@@ -657,7 +657,7 @@ public class Dispatcher {
           final DBlock block = globalBlocks.get(blk.getBlock());
           synchronized (block) {
             block.clearLocations();
-
+            // 获取当前节点存在的块，但是返回的块定位并不是只有当前节点！！一定要注意!一般带上定位的可能是块的复本所在的所有节点!!
             // update locations
             final String[] datanodeUuids = blk.getDatanodeUuids();
             final StorageType[] storageTypes = blk.getStorageTypes();
@@ -707,7 +707,7 @@ public class Dispatcher {
         final Task task = i.next();
         final DDatanode target = task.target.getDDatanode();
         final PendingMove pendingBlock = new PendingMove(this, task.target);
-        if (target.addPendingBlock(pendingBlock)) {
+        if (target.addPendingBlock(pendingBlock)) {//目标节点没有达到最大线程并发数
           // target is not busy, so do a tentative block allocation
           if (pendingBlock.chooseBlockAndProxy()) {
             long blockSize = pendingBlock.block.getNumBytes();
@@ -920,7 +920,9 @@ public class Dispatcher {
     }
     return false;
   }
-
+  /**
+   * 包括inlcude参数中指定的，并且是活着的、没有退役或退役中的节点!
+   */
   /** Get live datanode storage reports and then build the network topology. */
   public List<DatanodeStorageReport> init() throws IOException {
     final DatanodeStorageReport[] reports = nnc.getLiveDatanodeStorageReport();
