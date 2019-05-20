@@ -285,7 +285,7 @@ public class VolumeScanner extends Thread {
       LOG.warn("Reporting bad " + block + " with volume "
           + volume.getBasePath(), e);
       try {
-        scanner.datanode.reportBadBlocks(block, volume);
+        scanner.datanode.reportBadBlocks(block, volume);//如果有异常表示当前块损坏了，向NN报告
       } catch (IOException ie) {
         // This is bad, but not bad enough to shut down the scanner.
         LOG.warn("Cannot report bad block " + block, ie);
@@ -437,6 +437,7 @@ public class VolumeScanner extends Thread {
           false, true, true, datanode, null,
           CachingStrategy.newDropBehind());
       throttler.setBandwidth(bytesPerSec);
+      //以发送块的方式读块,抛异常就是损坏.
       long bytesRead = blockSender.sendBlock(nullStream, null, throttler);
       resultHandler.handle(block, null);
       return bytesRead;

@@ -147,14 +147,14 @@ public class BlockScanner {
     Conf(Configuration conf) {
       this.targetBytesPerSec = Math.max(0L, conf.getLong(
           DFS_BLOCK_SCANNER_VOLUME_BYTES_PER_SECOND,
-          DFS_BLOCK_SCANNER_VOLUME_BYTES_PER_SECOND_DEFAULT));
+          DFS_BLOCK_SCANNER_VOLUME_BYTES_PER_SECOND_DEFAULT));//throttler限流参数
       this.maxStalenessMs = Math.max(0L, getUnitTestLong(conf,
           INTERNAL_DFS_BLOCK_SCANNER_MAX_STALENESS_MS,
           INTERNAL_DFS_BLOCK_SCANNER_MAX_STALENESS_MS_DEFAULT));
-      this.scanPeriodMs = getConfiguredScanPeriodMs(conf);
+      this.scanPeriodMs = getConfiguredScanPeriodMs(conf);//每个volume扫描间隔
       this.cursorSaveMs = Math.max(0L, getUnitTestLong(conf,
           INTERNAL_DFS_BLOCK_SCANNER_CURSOR_SAVE_INTERVAL_MS,
-          INTERNAL_DFS_BLOCK_SCANNER_CURSOR_SAVE_INTERVAL_MS_DEFAULT));
+          INTERNAL_DFS_BLOCK_SCANNER_CURSOR_SAVE_INTERVAL_MS_DEFAULT));//没有体现出价值，屁用没有
       if (allowUnitTestSettings) {
         this.resultHandler = (Class<? extends ScanResultHandler>)
             conf.getClass(INTERNAL_VOLUME_SCANNER_SCAN_RESULT_HANDLER,
@@ -209,7 +209,7 @@ public class BlockScanner {
       LOG.debug("Adding scanner for volume {} (StorageID {})",
           volume.getBasePath(), volume.getStorageID());
       scanner = new VolumeScanner(conf, datanode, ref);
-      scanner.start();
+      scanner.start();//每个volume一个线程
       scanners.put(volume.getStorageID(), scanner);
       success = true;
     } finally {
