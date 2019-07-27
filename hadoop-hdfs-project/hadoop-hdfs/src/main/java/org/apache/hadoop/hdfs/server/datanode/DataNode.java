@@ -2091,7 +2091,13 @@ public class DataNode extends ReconfigurableBase
           BlockConstructionStage.PIPELINE_SETUP_CREATE, "")).start();
     }
   }
-
+  /**
+   * 来自NN命令，要求复制块的复本:比如下线节点，节点宕机等
+   * @param poolId
+   * @param blocks
+   * @param xferTargets
+   * @param xferTargetStorageTypes
+   */
   void transferBlocks(String poolId, Block blocks[],
       DatanodeInfo xferTargets[][], StorageType[][] xferTargetStorageTypes) {
     for (int i = 0; i < blocks.length; i++) {

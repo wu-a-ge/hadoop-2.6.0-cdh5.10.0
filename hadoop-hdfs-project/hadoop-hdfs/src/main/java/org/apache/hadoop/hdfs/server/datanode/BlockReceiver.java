@@ -1525,7 +1525,7 @@ class BlockReceiver implements Closeable {
           totalAckTimeNanos);
       if (replyAck.isSuccess()
           && offsetInBlock > replicaInfo.getBytesAcked()) {
-        replicaInfo.setBytesAcked(offsetInBlock);
+        replicaInfo.setBytesAcked(offsetInBlock);//保留确认的字节数，客户端需要此信息
       }
       // send my ack back to upstream datanode
       long begin = Time.monotonicNow();

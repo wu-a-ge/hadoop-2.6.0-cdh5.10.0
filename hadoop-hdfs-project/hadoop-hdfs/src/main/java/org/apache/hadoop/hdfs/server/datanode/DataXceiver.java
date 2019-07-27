@@ -604,7 +604,7 @@ class DataXceiver extends Receiver implements Runnable {
   public void writeBlock(final ExtendedBlock block,
       final StorageType storageType, 
       final Token<BlockTokenIdentifier> blockToken,
-      final String clientname,
+      final String clientname,//什么时候为空？DN调用transferBlock方法时才为空，复制一个块复本，客户端写整个管线都不为空!
       final DatanodeInfo[] targets,
       final StorageType[] targetStorageTypes, 
       final DatanodeInfo srcDataNode,
