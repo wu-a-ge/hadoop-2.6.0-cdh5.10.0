@@ -174,7 +174,7 @@ public class AppSchedulingInfo {
         // single container.
         request.setNumContainers(lastRequest.getNumContainers() + 1);
       }
-      asks.put(resourceName, request);
+      asks.put(resourceName, request);//这里的更新很简单，同一资源名使用request直接覆盖掉旧的
       //更新metrics
       if (updatePendingResources) {
         
@@ -413,7 +413,10 @@ public class AppSchedulingInfo {
       checkForDeactivation();
     }
   }
-  
+  /**
+   * 只有所有优先级的资源都调度完了才可以deactive当前APP
+   * @author flh 2019年9月3日 下午12:55:19
+   */
   synchronized private void checkForDeactivation() {
     boolean deactivate = true;
     for (Priority priority : getPriorities()) {

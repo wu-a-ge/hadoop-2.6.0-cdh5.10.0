@@ -762,7 +762,7 @@ public class LeafQueue extends AbstractCSQueue {
         + application.getApplicationId());
         application.showRequests();
       }
-
+      //加锁很重要，调度容器和资源申请是并发的，有同步问题
       synchronized (application) {
         // Check if this resource is on the blacklist
     	//此APP已经将此NODE加入了黑名单，不在此节点上进行调度容器
@@ -778,6 +778,7 @@ public class LeafQueue extends AbstractCSQueue {
           //data-local和rack-local不一定有相应的资源请求，但是off-switch资源请求是必须要存在的，不然可能无法调度!
           //Map同时提交data-local,rack-local,off-switch三种资源请求，Reduce只有rack-local,off-switch两种资源请求
           //所以这里使用ANY资源名获取资源来验证资源可调度性
+          //默认没有配置机架感知的情况下，肯定都有DEFAULT_RACK
           ResourceRequest anyRequest =
               application.getResourceRequest(priority, ResourceRequest.ANY);
           if (null == anyRequest) {

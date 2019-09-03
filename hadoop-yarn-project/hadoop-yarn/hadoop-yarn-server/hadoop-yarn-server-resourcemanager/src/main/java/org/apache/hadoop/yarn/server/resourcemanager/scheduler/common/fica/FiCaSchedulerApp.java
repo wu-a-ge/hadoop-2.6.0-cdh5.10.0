@@ -237,7 +237,7 @@ public class FiCaSchedulerApp extends SchedulerApplicationAttempt {
    */
   public synchronized Allocation getAllocation(ResourceCalculator rc,
       Resource clusterResource, Resource minimumAllocation) {
-	 //需要释放资源的容器ID
+	 //抢占的容器ID需要释放
     Set<ContainerId> currentContPreemption = Collections.unmodifiableSet(
         new HashSet<ContainerId>(containersToPreempt));
     containersToPreempt.clear();

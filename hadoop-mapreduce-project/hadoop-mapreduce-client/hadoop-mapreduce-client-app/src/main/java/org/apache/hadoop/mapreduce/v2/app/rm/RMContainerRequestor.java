@@ -394,7 +394,9 @@ public abstract class RMContainerRequestor extends RMCommunicator {
    */
   protected void addContainerReq(ContainerRequest req) {
     // Create resource requests
-    for (String host : req.hosts) {//hosts可能多个呀，比如资源文件分布在多个主机上,表示可以调度到这些机器上
+	//每份数据有多个复本，那么就有多个机器，所以就需要为每个HOST都提交一个资源申请，申请成功后，AM又会取一个任务出来把它的资源申请同样的方式减掉后再更新RM端！！
+	//最终启动容器都是由AM控制，就算RM多调度了容器,AM也不会多启动容器！
+    for (String host : req.hosts) {
       // Data-local
       if (!isNodeBlacklisted(host)) {
         addResourceRequest(req.priority, host, req.capability);
@@ -448,9 +450,9 @@ public abstract class RMContainerRequestor extends RMCommunicator {
       remoteRequest.setNumContainers(0);
       reqMap.put(capability, remoteRequest);
     }
-    //用资源名(主机名,机架名,*)和资源容量来表示一个资源请求，且可能需要多个容器，比如MAP或REDCUE
+    //用资源名和资源容量来表示一个资源请求，且可能多个容器，比如MAP或REDCUE
     remoteRequest.setNumContainers(remoteRequest.getNumContainers() + 1);
-
+    //同一优先级下，不同的资源名有不同的资源请求
     // Note this down for next interaction with ResourceManager
     addResourceRequestToAsk(remoteRequest);
     if (LOG.isDebugEnabled()) {
@@ -500,7 +502,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
         remoteRequestsTable.remove(priority);
       }
     }
-
+    // 变化的资源请求发给RM，这里主要是容器数据变少了
     // send the updated resource request to RM
     // send 0 container count requests also to cancel previous requests
     addResourceRequestToAsk(remoteRequest);
