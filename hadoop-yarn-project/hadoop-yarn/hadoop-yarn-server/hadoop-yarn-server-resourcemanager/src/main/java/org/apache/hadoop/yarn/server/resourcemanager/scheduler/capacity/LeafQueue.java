@@ -1561,7 +1561,8 @@ public class LeafQueue extends AbstractCSQueue {
     Resource capability = request.getCapability();
     Resource available = node.getAvailableResource();
     Resource totalResource = node.getTotalResource();
-    //TODO：有必要总资源和需求资源进行比较吗？直接使用可获得资源和需求资源比不就可以了！不明白！
+    //TODO：有必要总资源和需求资源进行比较吗？直接使用可获得资源和需求资源比不可以?不明白！
+    //而且调用此方法是有问题的
     if (!Resources.fitsIn(capability, totalResource)) {
       LOG.warn("Node : " + node.getNodeID()
           + " does not have sufficient resource for request : " + request

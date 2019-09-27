@@ -306,6 +306,7 @@ public abstract class FSQueue implements Queue, Schedulable {
   /**
    * Helper method to check if the queue should attempt assigning resources
    * <p>检查当前队列使用容量是否大于最大可分配的资源或者当前节点是否有保留容器</p>
+   * <p>TODO:注意这里比较了内存和CPU资源，没有使用资源计算器，是一个坑！！我觉得这里需要修正</p>
    * @return true if check passes (can assign) or false otherwise
    */
   protected boolean assignContainerPreCheck(FSSchedulerNode node) {

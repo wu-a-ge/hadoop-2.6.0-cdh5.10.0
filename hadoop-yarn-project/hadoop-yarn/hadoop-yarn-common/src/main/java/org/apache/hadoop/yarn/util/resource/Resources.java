@@ -262,7 +262,7 @@ public class Resources {
       Resource lhs, Resource rhs) {
     return resourceCalculator.compare(clusterResource, lhs, rhs) >= 0 ? lhs : rhs;
   }
-  
+  //TODO:主要是公平调度器使用此方法，容量调度器有几个地方在使用：getNodeIdToUnreserve,assignContainer，此方法是否有问题,VC不参与资源计算的时候，这里进行了比较？
   public static boolean fitsIn(Resource smaller, Resource bigger) {
     return smaller.getMemory() <= bigger.getMemory() &&
         smaller.getVirtualCores() <= bigger.getVirtualCores();
