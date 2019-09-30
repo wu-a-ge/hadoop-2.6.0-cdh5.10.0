@@ -131,7 +131,7 @@ class LocalResourcesTrackerImpl implements LocalResourcesTracker {
       }
       break;
     case REQUEST:
-      if (rsrc != null && (!isResourcePresent(rsrc))) {
+      if (rsrc != null && (!isResourcePresent(rsrc))) {//检查此资源是否已经被缓存
         LOG.info("Resource " + rsrc.getLocalPath()
             + " is missing, localizing it again");
         removeResource(req);
@@ -437,7 +437,7 @@ class LocalResourcesTrackerImpl implements LocalResourcesTracker {
 
     while (true) {
       Path uniquePath = new Path(rPath,
-          Long.toString(uniqueNumberGenerator.incrementAndGet()));
+          Long.toString(uniqueNumberGenerator.incrementAndGet()));//获取一个数字目录
       File file = new File(uniquePath.toUri().getRawPath());
       if (!file.exists()) {
         rPath = uniquePath;

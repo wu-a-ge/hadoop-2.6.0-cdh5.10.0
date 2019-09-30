@@ -850,7 +850,7 @@ public class ContainerManagerImpl extends CompositeService implements
                 logAggregationContext));
           dispatcher.getEventHandler().handle(
             new ApplicationInitEvent(applicationID, appAcls,
-              logAggregationContext));
+              logAggregationContext));//这里初始化app的一些信息，不是appmaster，也即每个容器启动都要进行此初始化
         }
 
         this.context.getNMStateStore().storeContainer(containerId, request);

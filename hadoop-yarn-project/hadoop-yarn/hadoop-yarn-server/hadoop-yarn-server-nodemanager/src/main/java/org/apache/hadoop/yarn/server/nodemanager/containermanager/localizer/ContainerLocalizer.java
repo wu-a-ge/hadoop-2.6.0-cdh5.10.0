@@ -231,7 +231,7 @@ public class ContainerLocalizer {
       CompletionService<Path> cs, UserGroupInformation ugi)
       throws IOException {
     while (true) {
-      try {
+      try { //使用一个死循环，和资源本地化服务通信判断资源是否下载成功或失败
         LocalizerStatus status = createStatus();
         LocalizerHeartbeatResponse response = nodemanager.heartbeat(status);
         switch (response.getLocalizerAction()) {

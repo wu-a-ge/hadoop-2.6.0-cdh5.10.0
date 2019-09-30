@@ -233,7 +233,7 @@ public class ResourceLocalizationService extends CompositeService
     try {
       lfs = getLocalFileContext(conf);
       lfs.setUMask(new FsPermission((short) FsPermission.DEFAULT_UMASK));
-
+      //ingore
       if (!stateStore.canRecover()|| stateStore.isNewlyCreated()) {
         cleanUpLocalDirs(lfs, delService);
         initializeLocalDirs(lfs);
@@ -243,7 +243,7 @@ public class ResourceLocalizationService extends CompositeService
       throw new YarnRuntimeException(
         "Failed to initialize LocalizationService", e);
     }
-
+    //PUBLIC ，private缓存最大默认保存10G，并且默认10分钟清空一次缓存
     cacheTargetSize =
       conf.getLong(YarnConfiguration.NM_LOCALIZER_CACHE_TARGET_SIZE_MB, YarnConfiguration.DEFAULT_NM_LOCALIZER_CACHE_TARGET_SIZE_MB) << 20;
     cacheCleanupPeriod =
@@ -349,7 +349,7 @@ public class ResourceLocalizationService extends CompositeService
   public void serviceStart() throws Exception {
     cacheCleanup.scheduleWithFixedDelay(new CacheCleanup(dispatcher),
         cacheCleanupPeriod, cacheCleanupPeriod, TimeUnit.MILLISECONDS);
-    server = createServer();
+    server = createServer();//线程间通信使用了一个RPC？很重量！没有其它更好的的解决办法？？共享内存通信呢？主
     server.start();
     localizationServerAddress =
         getConfig().updateConnectAddr(YarnConfiguration.NM_BIND_HOST,
@@ -403,7 +403,7 @@ public class ResourceLocalizationService extends CompositeService
   public void handle(LocalizationEvent event) {
     // TODO: create log dir as $logdir/$user/$appId
     switch (event.getType()) {
-    case INIT_APPLICATION_RESOURCES:
+    case INIT_APPLICATION_RESOURCES://每个容器所表示的APP如果没在此NM上初始化过，那么都必须进行APP的初始化，不是APPMASTER
       handleInitApplicationResources(
           ((ApplicationLocalizationEvent)event).getApplication());
       break;
@@ -669,6 +669,7 @@ public class ResourceLocalizationService extends CompositeService
   
   /**
    * Sub-component handling the spawning of {@link ContainerLocalizer}s
+   * 实际处理资源本地化的类
    */
   class LocalizerTracker extends AbstractService implements EventHandler<LocalizerEvent>  {
 
@@ -783,7 +784,7 @@ public class ResourceLocalizationService extends CompositeService
     return Executors.newFixedThreadPool(nThreads, tf);
   }
 
-
+  //处理公共可见性的资源本地化
   class PublicLocalizer extends Thread {
 
     final FileContext lfs;
@@ -911,7 +912,7 @@ public class ResourceLocalizationService extends CompositeService
   /**
    * Runs the {@link ContainerLocalizer} itself in a separate process with
    * access to user's credentials. One {@link LocalizerRunner} per localizerId.
-   * 
+   * 处理用户和应用程序级的资源本地化
    */
   class LocalizerRunner extends Thread {
 

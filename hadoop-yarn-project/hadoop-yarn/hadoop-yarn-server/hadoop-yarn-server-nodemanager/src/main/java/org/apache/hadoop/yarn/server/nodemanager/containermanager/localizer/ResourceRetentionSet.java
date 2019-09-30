@@ -50,7 +50,7 @@ public class ResourceRetentionSet {
     this.delService = delService;
     this.targetSize = targetSize;
   }
-
+  //被引用的不能删除，未被引用的文件一直删到比指定大小小为止而不是全部删除，所在指定目录还能看到很久的文件
   public void addResources(LocalResourcesTracker newTracker) {
     for (LocalizedResource resource : newTracker) {
       currentSize += resource.getSize();

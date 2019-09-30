@@ -49,7 +49,7 @@ import org.apache.hadoop.yarn.state.StateMachineFactory;
 /**
  * Datum representing a localized resource. Holds the statemachine of a
  * resource. State of the resource is one of {@link ResourceState}.
- * 
+ ** 本地化资源对象表示
  */
 public class LocalizedResource implements EventHandler<ResourceEvent> {
 
