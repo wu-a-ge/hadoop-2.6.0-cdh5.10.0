@@ -243,7 +243,7 @@ class BlockReceiver implements Closeable {
       // read checksum meta information
       this.clientChecksum = requestedChecksum;
       this.diskChecksum = streams.getChecksum();
-      this.needsChecksumTranslation = !clientChecksum.equals(diskChecksum);
+      this.needsChecksumTranslation = !clientChecksum.equals(diskChecksum);//对于文件的追加，校验和类型不一样，使用存储的校验和类型！
       this.bytesPerChecksum = diskChecksum.getBytesPerChecksum();
       this.checksumSize = diskChecksum.getChecksumSize();
 
