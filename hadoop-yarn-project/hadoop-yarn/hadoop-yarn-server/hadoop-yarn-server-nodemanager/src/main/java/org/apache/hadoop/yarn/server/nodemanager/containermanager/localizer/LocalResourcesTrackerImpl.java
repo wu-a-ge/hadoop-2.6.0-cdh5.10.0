@@ -123,6 +123,8 @@ class LocalResourcesTrackerImpl implements LocalResourcesTracker {
   @Override
   public synchronized void handle(ResourceEvent event) {
     LocalResourceRequest req = event.getLocalResourceRequest();
+	//这里是重点，使用了HashMap，HashMap使用的equals和hashcode进行比较的，所以一个资源是否存在
+    //肯定会比较它的时间，类型，原HDFS路径及Pattern
     LocalizedResource rsrc = localrsrc.get(req);
     switch (event.getType()) {
     case LOCALIZED:
