@@ -1096,6 +1096,8 @@ public class DFSOutputStream extends FSOutputSummer
               }
               // Restart will not be treated differently unless it is
               // the local node or the only one in the pipeline.
+              //通过dfsadmin的shutdowndatanode命令通知DN关闭，即DN才调用shutdown方法，blockreceiver才会发送oobrestart状态。
+              //但是这里还要判断如果管管线只有一个节点或客户端和重启DN在同一个机器才等待，条件很苛刻！
               if (PipelineAck.isRestartOOBStatus(reply) &&
                   shouldWaitForRestart(i)) {
                 restartDeadline = dfsClient.getConf().datanodeRestartTimeout +
